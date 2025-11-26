@@ -1,7 +1,4128 @@
 <pre>
 
-sexo^2
+library(dplyr)
+library(lubridate)
+library(tidyverse)
+library(ggridges)
+library(readxl)
+library(ggplot2)
+library(nortest)
+library(lmtest)
+library(zoo)
+library(writexl)
+library(fields)
+library(rjags)
+library(survey)
+
+MUE_BIO_TRAMPA_TIERRA_2022 <- read_excel("MUE_BIO_TRAMPA_TIERRA_2022.xlsx")
+
+MUE_BIO_TRAMPA_TIERRA_2022 <- MUE_BIO_TRAMPA_TIERRA_2022 %>%
+  mutate(
+    FECHA_HORA_ARRIBO = ymd_hms(FECHA_HORA_ARRIBO), 
+    FECHA = as.Date(FECHA_HORA_ARRIBO),
+    HORA = format(FECHA_HORA_ARRIBO, "%H:%M:%S"),
+    ANO = year(FECHA_HORA_ARRIBO),
+    MES = month(FECHA_HORA_ARRIBO),
+    DIA = day(FECHA_HORA_ARRIBO)
+  )
+
+attach(MUE_BIO_TRAMPA_TIERRA_2022)
+table(MUE_BIO_TRAMPA_TIERRA_2022$COD_ESPECIE)
+
+table(MUE_BIO_TRAMPA_TIERRA_2022$PUERTO_RECALADA)
+
+table(COD_ESPECIE[COD_ESPECIE == 66 & PUERTO_RECALADA == 960 & SEXO == 2], MES[COD_ESPECIE == 66 & PUERTO_RECALADA == 960 & SEXO ==2])
+
+
+table(SEXO[PUERTO_RECALADA == 947])
+
+mean(ANCHO_MM[PUERTO_RECALADA == 947 & COD_ESPECIE == 66 & SEXO == 1 & MES == 12] )
+
+## TABLA 19
+
+
+## MUEBIO ENBARQUE
+
+MUEBIO_EMBARQUE_2022 <- read_excel("MUEBIO_EMBARQUE_2022.xlsx")
+
+MUEBIO_EMBARQUE_2022 <- MUEBIO_EMBARQUE_2022 %>%
+  mutate(
+    FECHA_HORA_ZARPE = ymd_hms(FECHA_HORA_ZARPE), 
+    FECHA = as.Date(FECHA_HORA_ZARPE),
+    HORA = format(FECHA_HORA_ZARPE, "%H:%M:%S"),
+    ANO = year(FECHA_HORA_ZARPE),
+    MES = month(FECHA_HORA_ZARPE),
+    DIA = day(FECHA_HORA_ZARPE)
+  )
+
+summary(MUE_BIO_TRAMPA_TIERRA_2022$ANCHO_MM[COD_ESPECIE== 66  & PUERTO_RECALADA == 947 & SEXO == 1 & MES == 12])
+
+table(MUEBIO_EMBARQUE_2022$PUERTO_RECALADA)
+table(MUE_BIO_TRAMPA_TIERRA_2022$PUERTO_RECALADA)
+
+##### ANCUD
+datos_ancud = data.frame(ANCHO_MM = ANCHO_MM[COD_ESPECIE== 66  & PUERTO_RECALADA == 947], MES = MES[COD_ESPECIE== 66  & PUERTO_RECALADA == 947],
+                         SEXO = SEXO[COD_ESPECIE== 66  & PUERTO_RECALADA == 947])
+
+attach(datos_ancud)
+
+
+
+niveles_mes = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+datos_ancud = datos_ancud %>%
+  mutate(
+    
+    MES = as.character(MES),
+    MES = recode(MES,
+                 "1"="Ene","2"="Feb","3"="Mar","4"="Abr","5"="May","6"="Jun",
+                 "7"="Jul","8"="Ago","9"="Sep","10"="Oct","11"="Nov","12"="Dic",
+                 .default = MES
+    ),
+    MES = factor(MES, levels = niveles_mes),
+    
+    
+    SEXO = case_when(
+      SEXO == 1 ~ "Machos",
+      SEXO == 2 ~ "Hembras",
+      TRUE ~ NA_character_
+    ),
+    SEXO = factor(SEXO, levels = c("Machos", "Hembras"))
+  ) %>%
+  filter(!is.na(SEXO))  
+
+
+ggplot(datos_ancud, aes(x = ANCHO_MM, y = fct_rev(MES), fill = MES)) +
+  geom_density_ridges(
+    scale = 3,
+    rel_min_height = 0.001,
+    alpha = 0.85,
+    color = "black",
+    size = 0.2
+  ) +
+  facet_wrap(~ SEXO, nrow = 1, scales = "free_x") +
+  scale_fill_brewer(palette = "Blues", guide = "none") +
+  labs(
+    x = "ANCHO CEFALOTORÁXICO (mm)",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    axis.text.y        = element_text(size = 10),
+    strip.text         = element_text(face = "bold", size = 13)
+  )
+
+### Puerto Aysen 
+
+datos_aysen = data.frame(ANCHO_MM = ANCHO_MM[COD_ESPECIE== 66  & PUERTO_RECALADA == 960], MES = MES[COD_ESPECIE== 66  & PUERTO_RECALADA == 960],
+                         SEXO = SEXO[COD_ESPECIE== 66  & PUERTO_RECALADA == 960])
+
+
+attach(datos_aysen)
+
+niveles_mes = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+datos_aysen = datos_aysen %>%
+  mutate(
+    
+    MES = as.character(MES),
+    MES = recode(MES,
+                 "1"="Ene","2"="Feb","3"="Mar","4"="Abr","5"="May","6"="Jun",
+                 "7"="Jul","8"="Ago","9"="Sep","10"="Oct","11"="Nov","12"="Dic",
+                 .default = MES
+    ),
+    MES = factor(MES, levels = niveles_mes),
+    
+    
+    SEXO = case_when(
+      SEXO == 1 ~ "Machos",
+      SEXO == 2 ~ "Hembras",
+      TRUE ~ NA_character_
+    ),
+    SEXO = factor(SEXO, levels = c("Machos", "Hembras"))
+  ) %>%
+  filter(!is.na(SEXO))  
+
+ggplot(datos_aysen, aes(x = ANCHO_MM, y = fct_rev(MES), fill = MES)) +
+  geom_density_ridges(
+    scale = 3,
+    rel_min_height = 0.001,
+    alpha = 0.85,
+    color = "black",
+    size = 0.2
+  ) +
+  facet_wrap(~ SEXO, nrow = 1, scales = "free_x") +
+  scale_fill_brewer(palette = "Blues", guide = "none") +
+  labs(
+    x = "ANCHO CEFALOTORÁXICO (mm)",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    axis.text.y        = element_text(size = 10),
+    strip.text         = element_text(face = "bold", size = 13)
+  )
+
+table(MES)
+attach(MUE_BIO_TRAMPA_TIERRA_2022)
+
+
+### DALCAHUE
+
+
+datos_dalcahe = data.frame(ANCHO_MM = ANCHO_MM[COD_ESPECIE== 66  & PUERTO_RECALADA == 950], MES = MES[COD_ESPECIE== 66  & PUERTO_RECALADA == 950],
+                           SEXO = SEXO[COD_ESPECIE== 66  & PUERTO_RECALADA == 950])
+
+attach(datos_dalcahe)
+
+table(MES)
+
+
+
+niveles_mes = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+datos_dalcahe = datos_dalcahe %>%
+  mutate(
+    
+    MES = as.character(MES),
+    MES = recode(MES,
+                 "1"="Ene","2"="Feb","3"="Mar","4"="Abr","5"="May","6"="Jun",
+                 "7"="Jul","8"="Ago","9"="Sep","10"="Oct","11"="Nov","12"="Dic",
+                 .default = MES
+    ),
+    MES = factor(MES, levels = niveles_mes),
+    
+    
+    SEXO = case_when(
+      SEXO == 1 ~ "Machos",
+      SEXO == 2 ~ "Hembras",
+      TRUE ~ NA_character_
+    ),
+    SEXO = factor(SEXO, levels = c("Machos", "Hembras"))
+  ) %>%
+  filter(!is.na(SEXO))  
+
+
+ggplot(datos_dalcahe, aes(x = ANCHO_MM, y = fct_rev(MES), fill = MES)) +
+  geom_density_ridges(
+    scale = 3,
+    rel_min_height = 0.001,
+    alpha = 0.85,
+    color = "black",
+    size = 0.2
+  ) +
+  facet_wrap(~ SEXO, nrow = 1, scales = "free_x") +
+  scale_fill_brewer(palette = "Blues", guide = "none") +
+  labs(
+    x = "ANCHO CEFALOTORÁXICO (mm)",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    axis.text.y        = element_text(size = 10),
+    strip.text         = element_text(face = "bold", size = 13)
+  )
+
+table(MES)
+attach(MUE_BIO_TRAMPA_TIERRA_2022)
+
+
+##Curanué
+
+datos_curanue = data.frame(ANCHO_MM = ANCHO_MM[COD_ESPECIE== 66  & PUERTO_RECALADA == 65], MES = MES[COD_ESPECIE== 66  & PUERTO_RECALADA == 65],
+                           SEXO = SEXO[COD_ESPECIE== 66  & PUERTO_RECALADA == 65])
+attach(datos_curanue)
+
+niveles_mes = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+datos_curanue = datos_curanue %>%
+  mutate(
+    
+    MES = as.character(MES),
+    MES = recode(MES,
+                 "1"="Ene","2"="Feb","3"="Mar","4"="Abr","5"="May","6"="Jun",
+                 "7"="Jul","8"="Ago","9"="Sep","10"="Oct","11"="Nov","12"="Dic",
+                 .default = MES
+    ),
+    MES = factor(MES, levels = niveles_mes),
+    
+    
+    SEXO = case_when(
+      SEXO == 1 ~ "Machos",
+      SEXO == 2 ~ "Hembras",
+      TRUE ~ NA_character_
+    ),
+    SEXO = factor(SEXO, levels = c("Machos", "Hembras"))
+  ) %>%
+  filter(!is.na(SEXO))  
+
+
+ggplot(datos_curanue, aes(x = ANCHO_MM, y = fct_rev(MES), fill = MES)) +
+  geom_density_ridges(
+    scale = 3,
+    rel_min_height = 0.001,
+    alpha = 0.85,
+    color = "black",
+    size = 0.2
+  ) +
+  facet_wrap(~ SEXO, nrow = 1, scales = "free_x") +
+  scale_fill_brewer(palette = "Blues", guide = "none") +
+  labs(
+    x = "ANCHO CEFALOTORÁXICO (mm)",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    axis.text.y        = element_text(size = 10),
+    strip.text         = element_text(face = "bold", size = 13)
+  )
+
+table(MES)
+attach(MUE_BIO_TRAMPA_TIERRA_2022)
+
+
+table(PUERTO_RECALADA)
+
+
+## queilen
+
+datos_queilen =  data.frame(ANCHO_MM = ANCHO_MM[COD_ESPECIE== 66  & PUERTO_RECALADA == 953], MES = MES[COD_ESPECIE== 66  & PUERTO_RECALADA == 953],
+                            SEXO = SEXO[COD_ESPECIE== 66  & PUERTO_RECALADA == 953])
+
+attach(datos_queilen)
+
+niveles_mes = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+datos_queilen = datos_queilen %>%
+  mutate(
+    
+    MES = as.character(MES),
+    MES = recode(MES,
+                 "1"="Ene","2"="Feb","3"="Mar","4"="Abr","5"="May","6"="Jun",
+                 "7"="Jul","8"="Ago","9"="Sep","10"="Oct","11"="Nov","12"="Dic",
+                 .default = MES
+    ),
+    MES = factor(MES, levels = niveles_mes),
+    
+    
+    SEXO = case_when(
+      SEXO == 1 ~ "Machos",
+      SEXO == 2 ~ "Hembras",
+      TRUE ~ NA_character_
+    ),
+    SEXO = factor(SEXO, levels = c("Machos", "Hembras"))
+  ) %>%
+  filter(!is.na(SEXO))  
+
+
+ggplot(datos_queilen, aes(x = ANCHO_MM, y = fct_rev(MES), fill = MES)) +
+  geom_density_ridges(
+    scale = 3,
+    rel_min_height = 0.001,
+    alpha = 0.85,
+    color = "black",
+    size = 0.2
+  ) +
+  facet_wrap(~ SEXO, nrow = 1, scales = "free_x") +
+  scale_fill_brewer(palette = "Blues", guide = "none") +
+  labs(
+    x = "ANCHO CEFALOTORÁXICO (mm)",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    axis.text.y        = element_text(size = 10),
+    strip.text         = element_text(face = "bold", size = 13)
+  )
+
+table(MES)
+attach(MUE_BIO_TRAMPA_TIERRA_2022)
+
+##Tenaun
+
+datos_tenaun = data.frame(ANCHO_MM = ANCHO_MM[COD_ESPECIE== 66  & PUERTO_RECALADA == 1024], MES = MES[COD_ESPECIE== 66  & PUERTO_RECALADA == 1024],
+                          SEXO = SEXO[COD_ESPECIE== 66  & PUERTO_RECALADA == 1024])
+
+attach(datos_tenaun)
+
+niveles_mes = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+datos_tenaun = datos_tenaun %>%
+  mutate(
+    
+    MES = as.character(MES),
+    MES = recode(MES,
+                 "1"="Ene","2"="Feb","3"="Mar","4"="Abr","5"="May","6"="Jun",
+                 "7"="Jul","8"="Ago","9"="Sep","10"="Oct","11"="Nov","12"="Dic",
+                 .default = MES
+    ),
+    MES = factor(MES, levels = niveles_mes),
+    
+    SEXO = case_when(
+      SEXO == 1 ~ "Machos",
+      SEXO == 2 ~ "Hembras",
+      TRUE ~ NA_character_
+    ),
+    SEXO = factor(SEXO, levels = c("Machos", "Hembras"))
+  ) %>%
+  filter(!is.na(SEXO))  
+
+
+ggplot(datos_tenaun, aes(x = ANCHO_MM, y = fct_rev(MES), fill = MES)) +
+  geom_density_ridges(
+    scale = 3,
+    rel_min_height = 0.001,
+    alpha = 0.85,
+    color = "black",
+    size = 0.2
+  ) +
+  facet_wrap(~ SEXO, nrow = 1, scales = "free_x") +
+  scale_fill_brewer(palette = "Blues", guide = "none") +
+  labs(
+    x = "ANCHO CEFALOTORÁXICO (mm)",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    axis.text.y        = element_text(size = 10),
+    strip.text         = element_text(face = "bold", size = 13)
+  )
+
+table(MES)
+attach(MUE_BIO_TRAMPA_TIERRA_2022)
+
+table(PUERTO_RECALADA)
+
+
+################################ Por Buceo
+
+MUE_BIO_BUCEO_TIERRA_2022 <- read_excel("MUE_BIO_BUCEO_TIERRA_2022.xlsx")
+
+
+
+datos_buceo_ancud = data.frame(ANCHO_MM = MUE_BIO_BUCEO_TIERRA_2022$ANCHO[MUE_BIO_BUCEO_TIERRA_2022$PUERTO == 947 & MUE_BIO_BUCEO_TIERRA_2022$SEXO == 1 & MUE_BIO_BUCEO_TIERRA_2022$RECURSO  == 66],
+                               MES = MUE_BIO_BUCEO_TIERRA_2022$MES_ARRIBO[MUE_BIO_BUCEO_TIERRA_2022$PUERTO == 947 & MUE_BIO_BUCEO_TIERRA_2022$SEXO == 1 & MUE_BIO_BUCEO_TIERRA_2022$RECURSO  == 66],
+                               SEXO = MUE_BIO_BUCEO_TIERRA_2022$SEXO[MUE_BIO_BUCEO_TIERRA_2022$PUERTO == 947 & MUE_BIO_BUCEO_TIERRA_2022$SEXO == 1 & MUE_BIO_BUCEO_TIERRA_2022$RECURSO  == 66])
+
+attach(datos_buceo_ancud)
+
+niveles_mes = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+datos_buceo_ancud = datos_buceo_ancud %>%
+  mutate(
+    
+    MES = as.character(MES),
+    MES = recode(MES,
+                 "1"="Ene","2"="Feb","3"="Mar","4"="Abr","5"="May","6"="Jun",
+                 "7"="Jul","8"="Ago","9"="Sep","10"="Oct","11"="Nov","12"="Dic",
+                 .default = MES
+    ),
+    MES = factor(MES, levels = niveles_mes),
+    
+    
+    SEXO = case_when(
+      SEXO == 1 ~ "Machos",
+      SEXO == 2 ~ "Hembras",
+      TRUE ~ NA_character_
+    ),
+    SEXO = factor(SEXO, levels = c("Machos", "Hembras"))
+  ) %>%
+  filter(!is.na(SEXO))  
+
+
+ggplot(datos_buceo_ancud, aes(x = ANCHO_MM, y = fct_rev(MES), fill = MES)) +
+  geom_density_ridges(
+    scale = 3,
+    rel_min_height = 0.001,
+    alpha = 0.85,
+    color = "black",
+    size = 0.2
+  ) +
+  facet_wrap(~ SEXO, nrow = 1, scales = "free_x") +
+  scale_fill_brewer(palette = "Blues", guide = "none") +
+  labs(
+    x = "ANCHO CEFALOTORÁXICO (mm)",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    axis.text.y        = element_text(size = 10),
+    strip.text         = element_text(face = "bold", size = 13)
+  )
+
+
+
+
+
+#### Estimaciones
+
+
+TRAMPAS_MARMOLA_2022 <- read_excel("C:/Users/sebas/Downloads/TRAMPAS_MARMOLA_2022.xlsx")
+View(TRAMPAS_MARMOLA_2022)
+
+
+#Estimacion talla media
+
+talla_media_mes = function(arreglo, mes, sexo, puerto, arte){
+  
+  
+  tabla = table(arreglo$ANCHO_MM[arreglo$SEXO == sexo & arreglo$MES == mes &
+                                   arreglo$PUERTO_RECALADA == puerto &
+                                   arreglo$ARTE == arte])
+  prop = numeric(length(tabla))
+  mult = numeric(length(tabla))
+  talla <- as.numeric(row.names(tabla))
+  
+  tabla = as.matrix(tabla)
+  suma = sum(tabla)
+  
+  for (i in 1:length(tabla)) {
+    
+    prop[i] = tabla[i]/suma
+    
+  }
+  
+  
+  for (i in 1:length(tabla)) {
+    
+    mult[i] = talla[i]*prop[i]
+    
+  }
+  
+  sum(mult)
+}
+
+
+talla_media_mes(TRAMPAS_MARMOLA_2022, 1, 1, 947)
+
+
+estimaciones_trampa_macho_an = numeric(12)
+estimaciones_trampa_hembra_an = numeric(12)
+estimaciones_buceo_macho_an = numeric(12)
+
+for (i in 1:12) {
+  estimaciones_trampa_macho_an[i] = talla_media_mes(TRAMPAS_MARMOLA_2022, i, 1, 947, 2)
+  estimaciones_trampa_hembra_an[i] = talla_media_mes(TRAMPAS_MARMOLA_2022, i, 2, 947, 2)
+  estimaciones_buceo_macho_an[i] = talla_media_mes(TRAMPAS_MARMOLA_2022, i, 1, 947, 1)
+  
+}
+
+estimaciones_ancud_trampa_macho = data.frame(Est =estimaciones_trampa_macho_an, sexo = rep("macho", 12), mes = niveles_mes)
+estimaciones_ancud_trampa_hembra = data.frame(Est = estimaciones_trampa_hembra_an, sexo = rep("hembra", 12), mes = niveles_mes)
+estimaciones_ancud = bind_rows(estimaciones_ancud_trampa_macho, estimaciones_ancud_trampa_hembra)
+
+estimaciones_ancud$mes
+
+estimaciones_ancud$mes = factor(estimaciones_ancud$mes, levels = niveles_mes)
+
+ggplot(estimaciones_ancud, aes(x = mes, y = Est, group = sexo, color = sexo)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  labs(title = "Estimaciones por Mes y Sexo en Ancud",
+       x = "Mes",
+       y = "Estimación",
+       color = "Sexo") +
+  theme_minimal()
+
+estimaciones_ancud_buceo = data.frame(Est = estimaciones_buceo_macho_an, mes = niveles_mes,sexo = rep("macho", 12))
+estimaciones_ancud_buceo$mes = factor(estimaciones_ancud_buceo$mes, levels = niveles_mes)
+
+
+plot_data = estimaciones_ancud_buceo %>%
+  complete(sexo, mes = factor(niveles_mes, levels = niveles_mes)) %>%
+  arrange(sexo, mes)
+
+
+ggplot(plot_data, aes(x = mes, y = Est, color = sexo, group = sexo)) +
+  geom_line(linewidth = 1, na.rm = FALSE) + 
+  geom_point(size = 2, na.rm = TRUE) +       
+  scale_x_discrete(drop = FALSE) +           
+  labs(title = "Estimaciones por mes en Ancud",
+       x = "Mes", y = "Estimación", color = "Sexo") +
+  theme_minimal()
+
+
+
+# DALCAHUE
+
+estimaciones_trampa_macho_dal = numeric(12)
+estimaciones_trampa_hembra_dal = numeric(12)
+estimaciones_buceo_macho_dal = numeric(12)
+
+for (i in 1:12) {
+  estimaciones_trampa_macho_dal[i] = talla_media_mes(TRAMPAS_MARMOLA_2022, i, 1, 950, 2)
+  estimaciones_trampa_hembra_dal[i] = talla_media_mes(TRAMPAS_MARMOLA_2022, i, 2, 950, 2)
+  estimaciones_buceo_macho_dal[i] = talla_media_mes(TRAMPAS_MARMOLA_2022, i, 1, 950, 1)
+  
+}
+estimaciones_trampa_macho_dal
+estimaciones_trampa_hembra_dal
+
+estimaciones_dalcahue_trampa_macho = data.frame(Est =estimaciones_trampa_macho_dal, sexo = rep("macho", 12), mes = niveles_mes)
+estimaciones_dalcahue_trampa_hembra = data.frame(Est = estimaciones_trampa_hembra_dal, sexo = rep("hembra", 12), mes = niveles_mes)
+estimaciones_dalcahue = bind_rows(estimaciones_dalcahue_trampa_macho, estimaciones_dalcahue_trampa_hembra)
+estimaciones_dalcahue$mes = factor(estimaciones_dalcahue$mes, levels = niveles_mes)
+
+plot_data = estimaciones_dalcahue %>%
+  complete(sexo, mes = factor(niveles_mes, levels = niveles_mes)) %>%
+  arrange(sexo, mes)
+
+
+ggplot(plot_data, aes(x = mes, y = Est, color = sexo, group = sexo)) +
+  geom_line(linewidth = 1, na.rm = FALSE) +  
+  geom_point(size = 2, na.rm = TRUE) +       
+  scale_x_discrete(drop = FALSE) +           
+  labs(title = "Estimaciones por mes y sexo en Dalcahue",
+       x = "Mes", y = "Estimación", color = "Sexo") +
+  theme_minimal()
+
+#Curanae
+
+estimaciones_trampa_macho_cu = numeric(12)
+estimaciones_trampa_hembra_cu = numeric(12)
+
+
+for (i in 1:12) {
+  estimaciones_trampa_macho_cu[i] = talla_media_mes(TRAMPAS_MARMOLA_2022, i, 1, 65, 2)
+  estimaciones_trampa_hembra_cu[i] = talla_media_mes(TRAMPAS_MARMOLA_2022, i, 2, 65, 2)
+  
+  
+}
+estimaciones_trampa_macho_cu
+estimaciones_trampa_hembra_cu
+
+estimaciones_curanue_trampa_macho = data.frame(Est =estimaciones_trampa_macho_cu, sexo = rep("macho", 12), mes = niveles_mes)
+estimaciones_curanue_trampa_hembra = data.frame(Est = estimaciones_trampa_hembra_cu, sexo = rep("hembra", 12), mes = niveles_mes)
+estimaciones_curanue = bind_rows(estimaciones_curanue_trampa_macho, estimaciones_curanue_trampa_hembra)
+estimaciones_curanue$mes = factor(estimaciones_curanue$mes, levels = niveles_mes)
+
+plot_data = estimaciones_curanue %>%
+  complete(sexo, mes = factor(niveles_mes, levels = niveles_mes)) %>%
+  arrange(sexo, mes)
+
+
+ggplot(plot_data, aes(x = mes, y = Est, color = sexo, group = sexo)) +
+  geom_line(linewidth = 1, na.rm = FALSE) +  
+  geom_point(size = 2, na.rm = TRUE) +      
+  scale_x_discrete(drop = FALSE) +           
+  labs(title = "Estimaciones por mes y sexo en Curanué",
+       x = "Mes", y = "Estimación", color = "Sexo") +
+  theme_minimal()
+
+
+################## estimacion variabilidad
+
+
+
+### Bootstrap
+
+
+BootStrap_tallamedia = function(arreglo, sexo, puerto, arte, n){
+  
+  
+  tabla = arreglo[arreglo$SEXO == sexo & arreglo$PUERTO_RECALADA == puerto & arreglo$ARTE == arte,]
+  
+  tab_var = numeric(0)
+  
+  for (i in 1:12 ) {
+    
+    tab_boot = numeric(0)
+    tab_par = numeric(0)
+    
+    tab_aux = tabla[tabla$MES == i,]
+    
+    for(j in 1:n){
+      
+      #tab_boot = tab_aux[sample(1:nrow(tab_aux), size = nrow(tab_aux), replace = TRUE), ]
+      tab_boot = tab_aux %>%
+        group_by(VIAJE) %>%
+        group_modify(~ {
+          df <- .x
+          df[sample.int(nrow(df), nrow(df), replace = TRUE), ]
+        }) %>%
+        ungroup()
+      tab_par[j] = talla_media_mes(tab_boot, i, sexo, puerto, arte)
+      
+      
+    }
+    tab_var[i] = var(tab_par)
+    
+  }
+  
+  return(tab_var)
+  
+}
+
+
+
+
+BootStrap_tallamedia(arreglo =  TRAMPAS_MARMOLA_2022, sexo = 1, puerto = 947, arte = 2, n = 1000)
+BootStrap_tallamedia(arreglo =  TRAMPAS_MARMOLA_2022, sexo = 2, puerto = 947, arte = 2, n = 10000)
+BootStrap_tallamedia(arreglo =  TRAMPAS_MARMOLA_2022, sexo = 1, puerto = 950, arte = 2, n = 10000)
+BootStrap_tallamedia(arreglo =  TRAMPAS_MARMOLA_2022, sexo = 2, puerto = 950, arte = 2, n = 10000)
+BootStrap_tallamedia(arreglo =  TRAMPAS_MARMOLA_2022, sexo = 1, puerto = 65, arte = 2, n = 10000)
+BootStrap_tallamedia(arreglo =  TRAMPAS_MARMOLA_2022, sexo = 2, puerto = 65, arte = 2, n = 10000)
+BootStrap_tallamedia(arreglo =  TRAMPAS_MARMOLA_2022, sexo = 1, puerto = 947, arte = 1, n = 1000)
+
+#### RELACIONES LONGITUD-PESO
+
+
+ANCUD
+
+#modelo con log
+
+
+datos_ancud = TRAMPAS_MARMOLA_2022[TRAMPAS_MARMOLA_2022$PUERTO_RECALADA == 947 &
+                                     TRAMPAS_MARMOLA_2022$ARTE == 2, ]
+
+
+modelo_log = lm(log(PESO) ~ log(ANCHO_MM), data = datos_ancud)
+
+summary(modelo_log) 
+
+a= 0.0001433387 
+b = 3.0461
+
+ggplot(datos_ancud, aes(x = ANCHO_MM, y = PESO)) +
+  geom_point(alpha = 0.4) +
+  stat_smooth(
+    method = "lm",
+    formula = y ~ exp(log(a) + b * log(x)),
+    se = TRUE,
+    color = "red"
+  )  +
+  labs(
+    x = "Amplitud Cefalotorácica (mm)",
+    y = "Peso (g)",
+    title = "Relación longitud-peso estimada para jaiba marmola (Ancud)"
+  ) +
+  theme_minimal()
+
+#DALCAHUE
+
+datos_dalcahe = TRAMPAS_MARMOLA_2022[TRAMPAS_MARMOLA_2022$PUERTO_RECALADA == 950 &
+                                       TRAMPAS_MARMOLA_2022$ARTE == 2 & TRAMPAS_MARMOLA_2022$PESO != 0, ]
+
+modelo_log = lm(log(PESO) ~ log(ANCHO_MM), data = datos_dalcahe)
+
+summary(modelo_log)
+
+a = exp(modelo_log$coefficients[1])
+b = modelo_log$coefficients[2]
+
+ggplot(datos_dalcahe, aes(x = ANCHO_MM, y = PESO)) +
+  geom_point(alpha = 0.4) +
+  stat_smooth(
+    method = "lm",
+    formula = y ~ exp(log(a) + b * log(x)),
+    se = TRUE,
+    color = "red"
+  )  +
+  labs(
+    x = "Amplitud Cefalotorácica (mm)",
+    y = "Peso (g)",
+    title = "Relación longitud-peso estimada para jaiba marmola (Dalcahue)"
+  ) +
+  theme_minimal()
+
+#CURANUE
+
+datos_curanue = TRAMPAS_MARMOLA_2022[TRAMPAS_MARMOLA_2022$PUERTO_RECALADA == 65 &
+                                       TRAMPAS_MARMOLA_2022$ARTE == 2 & TRAMPAS_MARMOLA_2022$PESO != 0, ]
+
+modelo_log = lm(log(PESO) ~ log(ANCHO_MM), data = datos_curanue)
+
+summary(modelo_log)
+
+a = exp(modelo_log$coefficients[1])
+b = modelo_log$coefficients[2]
+
+ggplot(datos_curanue, aes(x = ANCHO_MM, y = PESO)) +
+  geom_point(alpha = 0.4) +
+  stat_smooth(
+    method = "lm",
+    formula = y ~ exp(log(a) + b * log(x)),
+    se = TRUE,
+    color = "red"
+  )  +
+  labs(
+    x = "Amplitud Cefalotorácica (mm)",
+    y = "Peso (g)",
+    title = "Relación longitud-peso estimada para jaiba marmola (Curanué)"
+  ) +
+  theme_minimal()
+
+
+
+### VARIANZA TALLA MEDIA
+
+
+TRAMPAS_MARMOLA_2022$VIAJE = paste(TRAMPAS_MARMOLA_2022$COD_BARCO,
+                                   TRAMPAS_MARMOLA_2022$FECHA_HORA_ARRIBO, sep = "_")
+
+
+
+
+talla_media_mes = function(arreglo, mes, sexo, puerto, arte){
+  
+  
+  tabla = table(arreglo$ANCHO_MM[arreglo$SEXO == sexo & arreglo$MES == mes &
+                                   arreglo$PUERTO_RECALADA == puerto &
+                                   arreglo$ARTE == arte])
+  prop = numeric(length(tabla))
+  mult = numeric(length(tabla))
+  talla <- as.numeric(row.names(tabla))
+  
+  tabla = as.matrix(tabla)
+  suma = sum(tabla)
+  
+  for (i in 1:length(tabla)) {
+    
+    prop[i] = tabla[i]/suma
+    
+  }
+  
+  
+  for (i in 1:length(tabla)) {
+    
+    mult[i] = talla[i]*prop[i]
+    
+  }
+  
+  sum(mult)
+}
+
+
+datos_ancud_enero = TRAMPAS_MARMOLA_2022[TRAMPAS_MARMOLA_2022$MES == 1 &
+                                           TRAMPAS_MARMOLA_2022$SEXO == 1 &
+                                           TRAMPAS_MARMOLA_2022$PUERTO_RECALADA == 947 &
+                                           TRAMPAS_MARMOLA_2022$ARTE == 2,]
+
+
+
+datos_ancud_enero <- datos_ancud_enero %>%
+  group_by(VIAJE) %>%
+  mutate(ejemplar = row_number()) %>%
+  ungroup()
+
+
+
+diseno <- svydesign(
+  id = ~VIAJE + ejemplar,
+  
+  data = datos_ancud_enero,
+)
+SE(svymean(~ANCHO_MM, diseno))[1]^2
+
+
+Var_est_talla_media = function(arreglo, sexo, puerto, arte, mes){
+  
+  tabla = arreglo[arreglo$SEXO == sexo & arreglo$PUERTO_RECALADA == puerto &
+                    arreglo$ARTE == arte & arreglo$MES == mes,]
+  
+  tabla = tabla %>%
+    filter(!is.na(COD_BARCO)) %>%
+    group_by(VIAJE) %>%
+    mutate(ejemplar = row_number()) %>%
+    ungroup() 
+  
+  
+  if (length(unique(tabla$VIAJE)) == 1 || arte == 1) {
+    diseno <- svydesign(
+      id = ~ejemplar,
+      data = tabla,
+    )
+    
+  }else{
+    diseno <- svydesign(
+      id = ~VIAJE + ejemplar,
+      data = tabla,
+    )
+  }
+  SE(svymean(~ANCHO_MM, diseno))[1]^2
+}
+
+
+var_ancud_trampa = numeric(0)
+for (i in 1:12) {
+  
+  var_ancud_trampa[i] = Var_est_talla_media(TRAMPAS_MARMOLA_2022, 1, 947, 1, i)
+  
+}
+
+var_ancud_trampa
+
+
+
+
+MUE_BIO_TRAMPA_TIERRA_2022 <- read_excel("MUE_BIO_TRAMPA_TIERRA_2022.xlsx")
+
+MUE_BIO_TRAMPA_TIERRA_2022 <- MUE_BIO_TRAMPA_TIERRA_2022 %>%
+  mutate(
+    FECHA_HORA_ARRIBO = ymd_hms(FECHA_HORA_ARRIBO), 
+    FECHA = as.Date(FECHA_HORA_ARRIBO),
+    HORA = format(FECHA_HORA_ARRIBO, "%H:%M:%S"),
+    ANO = year(FECHA_HORA_ARRIBO),
+    MES = month(FECHA_HORA_ARRIBO),
+    DIA = day(FECHA_HORA_ARRIBO)
+  )
+
+attach(MUE_BIO_TRAMPA_TIERRA_2022)
+table(MUE_BIO_TRAMPA_TIERRA_2022$COD_ESPECIE)
+
+table(MUE_BIO_TRAMPA_TIERRA_2022$PUERTO_RECALADA)
+
+table(COD_ESPECIE[COD_ESPECIE == 66 & PUERTO_RECALADA == 960 & SEXO == 2], MES[COD_ESPECIE == 66 & PUERTO_RECALADA == 960 & SEXO ==2])
+
+
+table(SEXO[PUERTO_RECALADA == 947])
+
+mean(ANCHO_MM[PUERTO_RECALADA == 947 & COD_ESPECIE == 66 & SEXO == 1 & MES == 12] )
+
+## TABLA 19
+
+
+## MUEBIO ENBARQUE
+
+MUEBIO_EMBARQUE_2022 <- read_excel("MUEBIO_EMBARQUE_2022.xlsx")
+
+MUEBIO_EMBARQUE_2022 <- MUEBIO_EMBARQUE_2022 %>%
+  mutate(
+    FECHA_HORA_ZARPE = ymd_hms(FECHA_HORA_ZARPE), 
+    FECHA = as.Date(FECHA_HORA_ZARPE),
+    HORA = format(FECHA_HORA_ZARPE, "%H:%M:%S"),
+    ANO = year(FECHA_HORA_ZARPE),
+    MES = month(FECHA_HORA_ZARPE),
+    DIA = day(FECHA_HORA_ZARPE)
+  )
+
+summary(MUE_BIO_TRAMPA_TIERRA_2022$ANCHO_MM[COD_ESPECIE== 66  & PUERTO_RECALADA == 947 & SEXO == 1 & MES == 12])
+
+table(MUEBIO_EMBARQUE_2022$PUERTO_RECALADA)
+table(MUE_BIO_TRAMPA_TIERRA_2022$PUERTO_RECALADA)
+
+##### ANCUD
+datos_ancud = data.frame(ANCHO_MM = ANCHO_MM[COD_ESPECIE== 66  & PUERTO_RECALADA == 947], MES = MES[COD_ESPECIE== 66  & PUERTO_RECALADA == 947],
+                         SEXO = SEXO[COD_ESPECIE== 66  & PUERTO_RECALADA == 947])
+
+attach(datos_ancud)
+
+
+
+niveles_mes = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+datos_ancud = datos_ancud %>%
+  mutate(
+    
+    MES = as.character(MES),
+    MES = recode(MES,
+                 "1"="Ene","2"="Feb","3"="Mar","4"="Abr","5"="May","6"="Jun",
+                 "7"="Jul","8"="Ago","9"="Sep","10"="Oct","11"="Nov","12"="Dic",
+                 .default = MES
+    ),
+    MES = factor(MES, levels = niveles_mes),
+    
+    
+    SEXO = case_when(
+      SEXO == 1 ~ "Machos",
+      SEXO == 2 ~ "Hembras",
+      TRUE ~ NA_character_
+    ),
+    SEXO = factor(SEXO, levels = c("Machos", "Hembras"))
+  ) %>%
+  filter(!is.na(SEXO))  
+
+
+ggplot(datos_ancud, aes(x = ANCHO_MM, y = fct_rev(MES), fill = MES)) +
+  geom_density_ridges(
+    scale = 3,
+    rel_min_height = 0.001,
+    alpha = 0.85,
+    color = "black",
+    size = 0.2
+  ) +
+  facet_wrap(~ SEXO, nrow = 1, scales = "free_x") +
+  scale_fill_brewer(palette = "Blues", guide = "none") +
+  labs(
+    x = "ANCHO CEFALOTORÁXICO (mm)",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    axis.text.y        = element_text(size = 10),
+    strip.text         = element_text(face = "bold", size = 13)
+  )
+
+### Puerto Aysen 
+
+datos_aysen = data.frame(ANCHO_MM = ANCHO_MM[COD_ESPECIE== 66  & PUERTO_RECALADA == 960], MES = MES[COD_ESPECIE== 66  & PUERTO_RECALADA == 960],
+                         SEXO = SEXO[COD_ESPECIE== 66  & PUERTO_RECALADA == 960])
+
+
+attach(datos_aysen)
+
+niveles_mes = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+datos_aysen = datos_aysen %>%
+  mutate(
+    
+    MES = as.character(MES),
+    MES = recode(MES,
+                 "1"="Ene","2"="Feb","3"="Mar","4"="Abr","5"="May","6"="Jun",
+                 "7"="Jul","8"="Ago","9"="Sep","10"="Oct","11"="Nov","12"="Dic",
+                 .default = MES
+    ),
+    MES = factor(MES, levels = niveles_mes),
+    
+    
+    SEXO = case_when(
+      SEXO == 1 ~ "Machos",
+      SEXO == 2 ~ "Hembras",
+      TRUE ~ NA_character_
+    ),
+    SEXO = factor(SEXO, levels = c("Machos", "Hembras"))
+  ) %>%
+  filter(!is.na(SEXO))  
+
+ggplot(datos_aysen, aes(x = ANCHO_MM, y = fct_rev(MES), fill = MES)) +
+  geom_density_ridges(
+    scale = 3,
+    rel_min_height = 0.001,
+    alpha = 0.85,
+    color = "black",
+    size = 0.2
+  ) +
+  facet_wrap(~ SEXO, nrow = 1, scales = "free_x") +
+  scale_fill_brewer(palette = "Blues", guide = "none") +
+  labs(
+    x = "ANCHO CEFALOTORÁXICO (mm)",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    axis.text.y        = element_text(size = 10),
+    strip.text         = element_text(face = "bold", size = 13)
+  )
+
+table(MES)
+attach(MUE_BIO_TRAMPA_TIERRA_2022)
+
+
+### DALCAHUE
+
+
+datos_dalcahe = data.frame(ANCHO_MM = ANCHO_MM[COD_ESPECIE== 66  & PUERTO_RECALADA == 950], MES = MES[COD_ESPECIE== 66  & PUERTO_RECALADA == 950],
+                           SEXO = SEXO[COD_ESPECIE== 66  & PUERTO_RECALADA == 950])
+
+attach(datos_dalcahe)
+
+table(MES)
+
+
+
+niveles_mes = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+datos_dalcahe = datos_dalcahe %>%
+  mutate(
+    
+    MES = as.character(MES),
+    MES = recode(MES,
+                 "1"="Ene","2"="Feb","3"="Mar","4"="Abr","5"="May","6"="Jun",
+                 "7"="Jul","8"="Ago","9"="Sep","10"="Oct","11"="Nov","12"="Dic",
+                 .default = MES
+    ),
+    MES = factor(MES, levels = niveles_mes),
+    
+    
+    SEXO = case_when(
+      SEXO == 1 ~ "Machos",
+      SEXO == 2 ~ "Hembras",
+      TRUE ~ NA_character_
+    ),
+    SEXO = factor(SEXO, levels = c("Machos", "Hembras"))
+  ) %>%
+  filter(!is.na(SEXO))  
+
+
+ggplot(datos_dalcahe, aes(x = ANCHO_MM, y = fct_rev(MES), fill = MES)) +
+  geom_density_ridges(
+    scale = 3,
+    rel_min_height = 0.001,
+    alpha = 0.85,
+    color = "black",
+    size = 0.2
+  ) +
+  facet_wrap(~ SEXO, nrow = 1, scales = "free_x") +
+  scale_fill_brewer(palette = "Blues", guide = "none") +
+  labs(
+    x = "ANCHO CEFALOTORÁXICO (mm)",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    axis.text.y        = element_text(size = 10),
+    strip.text         = element_text(face = "bold", size = 13)
+  )
+
+table(MES)
+attach(MUE_BIO_TRAMPA_TIERRA_2022)
+
+
+##Curanué
+
+datos_curanue = data.frame(ANCHO_MM = ANCHO_MM[COD_ESPECIE== 66  & PUERTO_RECALADA == 65], MES = MES[COD_ESPECIE== 66  & PUERTO_RECALADA == 65],
+                           SEXO = SEXO[COD_ESPECIE== 66  & PUERTO_RECALADA == 65])
+attach(datos_curanue)
+
+niveles_mes = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+datos_curanue = datos_curanue %>%
+  mutate(
+    
+    MES = as.character(MES),
+    MES = recode(MES,
+                 "1"="Ene","2"="Feb","3"="Mar","4"="Abr","5"="May","6"="Jun",
+                 "7"="Jul","8"="Ago","9"="Sep","10"="Oct","11"="Nov","12"="Dic",
+                 .default = MES
+    ),
+    MES = factor(MES, levels = niveles_mes),
+    
+    
+    SEXO = case_when(
+      SEXO == 1 ~ "Machos",
+      SEXO == 2 ~ "Hembras",
+      TRUE ~ NA_character_
+    ),
+    SEXO = factor(SEXO, levels = c("Machos", "Hembras"))
+  ) %>%
+  filter(!is.na(SEXO))  
+
+
+ggplot(datos_curanue, aes(x = ANCHO_MM, y = fct_rev(MES), fill = MES)) +
+  geom_density_ridges(
+    scale = 3,
+    rel_min_height = 0.001,
+    alpha = 0.85,
+    color = "black",
+    size = 0.2
+  ) +
+  facet_wrap(~ SEXO, nrow = 1, scales = "free_x") +
+  scale_fill_brewer(palette = "Blues", guide = "none") +
+  labs(
+    x = "ANCHO CEFALOTORÁXICO (mm)",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    axis.text.y        = element_text(size = 10),
+    strip.text         = element_text(face = "bold", size = 13)
+  )
+
+table(MES)
+attach(MUE_BIO_TRAMPA_TIERRA_2022)
+
+
+table(PUERTO_RECALADA)
+
+
+## queilen
+
+datos_queilen =  data.frame(ANCHO_MM = ANCHO_MM[COD_ESPECIE== 66  & PUERTO_RECALADA == 953], MES = MES[COD_ESPECIE== 66  & PUERTO_RECALADA == 953],
+                            SEXO = SEXO[COD_ESPECIE== 66  & PUERTO_RECALADA == 953])
+
+attach(datos_queilen)
+
+niveles_mes = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+datos_queilen = datos_queilen %>%
+  mutate(
+    
+    MES = as.character(MES),
+    MES = recode(MES,
+                 "1"="Ene","2"="Feb","3"="Mar","4"="Abr","5"="May","6"="Jun",
+                 "7"="Jul","8"="Ago","9"="Sep","10"="Oct","11"="Nov","12"="Dic",
+                 .default = MES
+    ),
+    MES = factor(MES, levels = niveles_mes),
+    
+    
+    SEXO = case_when(
+      SEXO == 1 ~ "Machos",
+      SEXO == 2 ~ "Hembras",
+      TRUE ~ NA_character_
+    ),
+    SEXO = factor(SEXO, levels = c("Machos", "Hembras"))
+  ) %>%
+  filter(!is.na(SEXO))  
+
+
+ggplot(datos_queilen, aes(x = ANCHO_MM, y = fct_rev(MES), fill = MES)) +
+  geom_density_ridges(
+    scale = 3,
+    rel_min_height = 0.001,
+    alpha = 0.85,
+    color = "black",
+    size = 0.2
+  ) +
+  facet_wrap(~ SEXO, nrow = 1, scales = "free_x") +
+  scale_fill_brewer(palette = "Blues", guide = "none") +
+  labs(
+    x = "ANCHO CEFALOTORÁXICO (mm)",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    axis.text.y        = element_text(size = 10),
+    strip.text         = element_text(face = "bold", size = 13)
+  )
+
+table(MES)
+attach(MUE_BIO_TRAMPA_TIERRA_2022)
+
+##Tenaun
+
+datos_tenaun = data.frame(ANCHO_MM = ANCHO_MM[COD_ESPECIE== 66  & PUERTO_RECALADA == 1024], MES = MES[COD_ESPECIE== 66  & PUERTO_RECALADA == 1024],
+                          SEXO = SEXO[COD_ESPECIE== 66  & PUERTO_RECALADA == 1024])
+
+attach(datos_tenaun)
+
+niveles_mes = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+datos_tenaun = datos_tenaun %>%
+  mutate(
+    
+    MES = as.character(MES),
+    MES = recode(MES,
+                 "1"="Ene","2"="Feb","3"="Mar","4"="Abr","5"="May","6"="Jun",
+                 "7"="Jul","8"="Ago","9"="Sep","10"="Oct","11"="Nov","12"="Dic",
+                 .default = MES
+    ),
+    MES = factor(MES, levels = niveles_mes),
+    
+    SEXO = case_when(
+      SEXO == 1 ~ "Machos",
+      SEXO == 2 ~ "Hembras",
+      TRUE ~ NA_character_
+    ),
+    SEXO = factor(SEXO, levels = c("Machos", "Hembras"))
+  ) %>%
+  filter(!is.na(SEXO))  
+
+
+ggplot(datos_tenaun, aes(x = ANCHO_MM, y = fct_rev(MES), fill = MES)) +
+  geom_density_ridges(
+    scale = 3,
+    rel_min_height = 0.001,
+    alpha = 0.85,
+    color = "black",
+    size = 0.2
+  ) +
+  facet_wrap(~ SEXO, nrow = 1, scales = "free_x") +
+  scale_fill_brewer(palette = "Blues", guide = "none") +
+  labs(
+    x = "ANCHO CEFALOTORÁXICO (mm)",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    axis.text.y        = element_text(size = 10),
+    strip.text         = element_text(face = "bold", size = 13)
+  )
+
+table(MES)
+attach(MUE_BIO_TRAMPA_TIERRA_2022)
+
+table(PUERTO_RECALADA)
+
+
+################################ Por Buceo
+
+MUE_BIO_BUCEO_TIERRA_2022 <- read_excel("MUE_BIO_BUCEO_TIERRA_2022.xlsx")
+
+
+
+datos_buceo_ancud = data.frame(ANCHO_MM = MUE_BIO_BUCEO_TIERRA_2022$ANCHO[MUE_BIO_BUCEO_TIERRA_2022$PUERTO == 947 & MUE_BIO_BUCEO_TIERRA_2022$SEXO == 1 & MUE_BIO_BUCEO_TIERRA_2022$RECURSO  == 66],
+                               MES = MUE_BIO_BUCEO_TIERRA_2022$MES_ARRIBO[MUE_BIO_BUCEO_TIERRA_2022$PUERTO == 947 & MUE_BIO_BUCEO_TIERRA_2022$SEXO == 1 & MUE_BIO_BUCEO_TIERRA_2022$RECURSO  == 66],
+                               SEXO = MUE_BIO_BUCEO_TIERRA_2022$SEXO[MUE_BIO_BUCEO_TIERRA_2022$PUERTO == 947 & MUE_BIO_BUCEO_TIERRA_2022$SEXO == 1 & MUE_BIO_BUCEO_TIERRA_2022$RECURSO  == 66])
+
+attach(datos_buceo_ancud)
+
+niveles_mes = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+datos_buceo_ancud = datos_buceo_ancud %>%
+  mutate(
+    
+    MES = as.character(MES),
+    MES = recode(MES,
+                 "1"="Ene","2"="Feb","3"="Mar","4"="Abr","5"="May","6"="Jun",
+                 "7"="Jul","8"="Ago","9"="Sep","10"="Oct","11"="Nov","12"="Dic",
+                 .default = MES
+    ),
+    MES = factor(MES, levels = niveles_mes),
+    
+    
+    SEXO = case_when(
+      SEXO == 1 ~ "Machos",
+      SEXO == 2 ~ "Hembras",
+      TRUE ~ NA_character_
+    ),
+    SEXO = factor(SEXO, levels = c("Machos", "Hembras"))
+  ) %>%
+  filter(!is.na(SEXO))  
+
+
+ggplot(datos_buceo_ancud, aes(x = ANCHO_MM, y = fct_rev(MES), fill = MES)) +
+  geom_density_ridges(
+    scale = 3,
+    rel_min_height = 0.001,
+    alpha = 0.85,
+    color = "black",
+    size = 0.2
+  ) +
+  facet_wrap(~ SEXO, nrow = 1, scales = "free_x") +
+  scale_fill_brewer(palette = "Blues", guide = "none") +
+  labs(
+    x = "ANCHO CEFALOTORÁXICO (mm)",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    axis.text.y        = element_text(size = 10),
+    strip.text         = element_text(face = "bold", size = 13)
+  )
+
+
+
+
+
+#### Estimaciones
+
+
+TRAMPAS_MARMOLA_2022 <- read_excel("C:/Users/sebas/Downloads/TRAMPAS_MARMOLA_2022.xlsx")
+View(TRAMPAS_MARMOLA_2022)
+
+
+#Estimacion talla media
+
+talla_media_mes = function(arreglo, mes, sexo, puerto, arte){
+  
+  
+  tabla = table(arreglo$ANCHO_MM[arreglo$SEXO == sexo & arreglo$MES == mes &
+                                   arreglo$PUERTO_RECALADA == puerto &
+                                   arreglo$ARTE == arte])
+  prop = numeric(length(tabla))
+  mult = numeric(length(tabla))
+  talla <- as.numeric(row.names(tabla))
+  
+  tabla = as.matrix(tabla)
+  suma = sum(tabla)
+  
+  for (i in 1:length(tabla)) {
+    
+    prop[i] = tabla[i]/suma
+    
+  }
+  
+  
+  for (i in 1:length(tabla)) {
+    
+    mult[i] = talla[i]*prop[i]
+    
+  }
+  
+  sum(mult)
+}
+
+
+talla_media_mes(TRAMPAS_MARMOLA_2022, 1, 1, 947)
+
+
+estimaciones_trampa_macho_an = numeric(12)
+estimaciones_trampa_hembra_an = numeric(12)
+estimaciones_buceo_macho_an = numeric(12)
+
+for (i in 1:12) {
+  estimaciones_trampa_macho_an[i] = talla_media_mes(TRAMPAS_MARMOLA_2022, i, 1, 947, 2)
+  estimaciones_trampa_hembra_an[i] = talla_media_mes(TRAMPAS_MARMOLA_2022, i, 2, 947, 2)
+  estimaciones_buceo_macho_an[i] = talla_media_mes(TRAMPAS_MARMOLA_2022, i, 1, 947, 1)
+  
+}
+
+estimaciones_ancud_trampa_macho = data.frame(Est =estimaciones_trampa_macho_an, sexo = rep("macho", 12), mes = niveles_mes)
+estimaciones_ancud_trampa_hembra = data.frame(Est = estimaciones_trampa_hembra_an, sexo = rep("hembra", 12), mes = niveles_mes)
+estimaciones_ancud = bind_rows(estimaciones_ancud_trampa_macho, estimaciones_ancud_trampa_hembra)
+
+estimaciones_ancud$mes
+
+estimaciones_ancud$mes = factor(estimaciones_ancud$mes, levels = niveles_mes)
+
+ggplot(estimaciones_ancud, aes(x = mes, y = Est, group = sexo, color = sexo)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  labs(title = "Estimaciones por Mes y Sexo en Ancud",
+       x = "Mes",
+       y = "Estimación",
+       color = "Sexo") +
+  theme_minimal()
+
+estimaciones_ancud_buceo = data.frame(Est = estimaciones_buceo_macho_an, mes = niveles_mes,sexo = rep("macho", 12))
+estimaciones_ancud_buceo$mes = factor(estimaciones_ancud_buceo$mes, levels = niveles_mes)
+
+
+plot_data = estimaciones_ancud_buceo %>%
+  complete(sexo, mes = factor(niveles_mes, levels = niveles_mes)) %>%
+  arrange(sexo, mes)
+
+
+ggplot(plot_data, aes(x = mes, y = Est, color = sexo, group = sexo)) +
+  geom_line(linewidth = 1, na.rm = FALSE) + 
+  geom_point(size = 2, na.rm = TRUE) +       
+  scale_x_discrete(drop = FALSE) +           
+  labs(title = "Estimaciones por mes en Ancud",
+       x = "Mes", y = "Estimación", color = "Sexo") +
+  theme_minimal()
+
+
+
+# DALCAHUE
+
+estimaciones_trampa_macho_dal = numeric(12)
+estimaciones_trampa_hembra_dal = numeric(12)
+estimaciones_buceo_macho_dal = numeric(12)
+
+for (i in 1:12) {
+  estimaciones_trampa_macho_dal[i] = talla_media_mes(TRAMPAS_MARMOLA_2022, i, 1, 950, 2)
+  estimaciones_trampa_hembra_dal[i] = talla_media_mes(TRAMPAS_MARMOLA_2022, i, 2, 950, 2)
+  estimaciones_buceo_macho_dal[i] = talla_media_mes(TRAMPAS_MARMOLA_2022, i, 1, 950, 1)
+  
+}
+estimaciones_trampa_macho_dal
+estimaciones_trampa_hembra_dal
+
+estimaciones_dalcahue_trampa_macho = data.frame(Est =estimaciones_trampa_macho_dal, sexo = rep("macho", 12), mes = niveles_mes)
+estimaciones_dalcahue_trampa_hembra = data.frame(Est = estimaciones_trampa_hembra_dal, sexo = rep("hembra", 12), mes = niveles_mes)
+estimaciones_dalcahue = bind_rows(estimaciones_dalcahue_trampa_macho, estimaciones_dalcahue_trampa_hembra)
+estimaciones_dalcahue$mes = factor(estimaciones_dalcahue$mes, levels = niveles_mes)
+
+plot_data = estimaciones_dalcahue %>%
+  complete(sexo, mes = factor(niveles_mes, levels = niveles_mes)) %>%
+  arrange(sexo, mes)
+
+
+ggplot(plot_data, aes(x = mes, y = Est, color = sexo, group = sexo)) +
+  geom_line(linewidth = 1, na.rm = FALSE) +  
+  geom_point(size = 2, na.rm = TRUE) +       
+  scale_x_discrete(drop = FALSE) +           
+  labs(title = "Estimaciones por mes y sexo en Dalcahue",
+       x = "Mes", y = "Estimación", color = "Sexo") +
+  theme_minimal()
+
+#Curanae
+
+estimaciones_trampa_macho_cu = numeric(12)
+estimaciones_trampa_hembra_cu = numeric(12)
+
+
+for (i in 1:12) {
+  estimaciones_trampa_macho_cu[i] = talla_media_mes(TRAMPAS_MARMOLA_2022, i, 1, 65, 2)
+  estimaciones_trampa_hembra_cu[i] = talla_media_mes(TRAMPAS_MARMOLA_2022, i, 2, 65, 2)
+  
+  
+}
+estimaciones_trampa_macho_cu
+estimaciones_trampa_hembra_cu
+
+estimaciones_curanue_trampa_macho = data.frame(Est =estimaciones_trampa_macho_cu, sexo = rep("macho", 12), mes = niveles_mes)
+estimaciones_curanue_trampa_hembra = data.frame(Est = estimaciones_trampa_hembra_cu, sexo = rep("hembra", 12), mes = niveles_mes)
+estimaciones_curanue = bind_rows(estimaciones_curanue_trampa_macho, estimaciones_curanue_trampa_hembra)
+estimaciones_curanue$mes = factor(estimaciones_curanue$mes, levels = niveles_mes)
+
+plot_data = estimaciones_curanue %>%
+  complete(sexo, mes = factor(niveles_mes, levels = niveles_mes)) %>%
+  arrange(sexo, mes)
+
+
+ggplot(plot_data, aes(x = mes, y = Est, color = sexo, group = sexo)) +
+  geom_line(linewidth = 1, na.rm = FALSE) +  
+  geom_point(size = 2, na.rm = TRUE) +      
+  scale_x_discrete(drop = FALSE) +           
+  labs(title = "Estimaciones por mes y sexo en Curanué",
+       x = "Mes", y = "Estimación", color = "Sexo") +
+  theme_minimal()
+
+
+################## estimacion variabilidad
+
+
+
+### Bootstrap
+
+
+BootStrap_tallamedia = function(arreglo, sexo, puerto, arte, n){
+  
+  
+  tabla = arreglo[arreglo$SEXO == sexo & arreglo$PUERTO_RECALADA == puerto & arreglo$ARTE == arte,]
+  
+  tab_var = numeric(0)
+  
+  for (i in 1:12 ) {
+    
+    tab_boot = numeric(0)
+    tab_par = numeric(0)
+    
+    tab_aux = tabla[tabla$MES == i,]
+    
+    for(j in 1:n){
+      
+      tab_boot = tab_aux[sample(1:nrow(tab_aux), size = nrow(tab_aux), replace = TRUE), ]
+      
+      tab_par[j] = talla_media_mes(tab_boot, i, sexo, puerto, arte)
+      
+      
+    }
+    tab_var[i] = var(tab_par)
+    
+  }
+  
+  return(tab_var)
+  
+}
+
+
+BootStrap_tallamedia(arreglo =  TRAMPAS_MARMOLA_2022, sexo = 1, puerto = 947, arte = 2, n = 10000)
+BootStrap_tallamedia(arreglo =  TRAMPAS_MARMOLA_2022, sexo = 2, puerto = 947, arte = 2, n = 10000)
+BootStrap_tallamedia(arreglo =  TRAMPAS_MARMOLA_2022, sexo = 1, puerto = 950, arte = 2, n = 10000)
+BootStrap_tallamedia(arreglo =  TRAMPAS_MARMOLA_2022, sexo = 2, puerto = 950, arte = 2, n = 10000)
+BootStrap_tallamedia(arreglo =  TRAMPAS_MARMOLA_2022, sexo = 1, puerto = 65, arte = 2, n = 10000)
+BootStrap_tallamedia(arreglo =  TRAMPAS_MARMOLA_2022, sexo = 2, puerto = 65, arte = 2, n = 10000)
+BootStrap_tallamedia(arreglo =  TRAMPAS_MARMOLA_2022, sexo = 1, puerto = 947, arte = 1, n = 10000)
+
+#### RELACIONES LONGITUD-PESO
+
+
+ANCUD
+
+#modelo con log
+
+
+datos_ancud = TRAMPAS_MARMOLA_2022[TRAMPAS_MARMOLA_2022$PUERTO_RECALADA == 947 &
+                                     TRAMPAS_MARMOLA_2022$ARTE == 2, ]
+
+
+modelo_log = lm(log(PESO) ~ log(ANCHO_MM), data = datos_ancud)
+
+summary(modelo_log) 
+
+a= 0.0001433387 
+b = 3.0461
+
+ggplot(datos_ancud, aes(x = ANCHO_MM, y = PESO)) +
+  geom_point(alpha = 0.4) +
+  stat_smooth(
+    method = "lm",
+    formula = y ~ exp(log(a) + b * log(x)),
+    se = TRUE,
+    color = "red"
+  )  +
+  labs(
+    x = "Amplitud Cefalotorácica (mm)",
+    y = "Peso (g)",
+    title = "Relación longitud-peso estimada para jaiba marmola (Ancud)"
+  ) +
+  theme_minimal()
+
+#DALCAHUE
+
+datos_dalcahe = TRAMPAS_MARMOLA_2022[TRAMPAS_MARMOLA_2022$PUERTO_RECALADA == 950 &
+                                       TRAMPAS_MARMOLA_2022$ARTE == 2 & TRAMPAS_MARMOLA_2022$PESO != 0, ]
+
+modelo_log = lm(log(PESO) ~ log(ANCHO_MM), data = datos_dalcahe)
+
+summary(modelo_log)
+
+a = exp(modelo_log$coefficients[1])
+b = modelo_log$coefficients[2]
+
+ggplot(datos_dalcahe, aes(x = ANCHO_MM, y = PESO)) +
+  geom_point(alpha = 0.4) +
+  stat_smooth(
+    method = "lm",
+    formula = y ~ exp(log(a) + b * log(x)),
+    se = TRUE,
+    color = "red"
+  )  +
+  labs(
+    x = "Amplitud Cefalotorácica (mm)",
+    y = "Peso (g)",
+    title = "Relación longitud-peso estimada para jaiba marmola (Dalcahue)"
+  ) +
+  theme_minimal()
+
+#CURANUE
+
+datos_curanue = TRAMPAS_MARMOLA_2022[TRAMPAS_MARMOLA_2022$PUERTO_RECALADA == 65 &
+                                       TRAMPAS_MARMOLA_2022$ARTE == 2 & TRAMPAS_MARMOLA_2022$PESO != 0, ]
+
+modelo_log = lm(log(PESO) ~ log(ANCHO_MM), data = datos_curanue)
+
+summary(modelo_log)
+
+a = exp(modelo_log$coefficients[1])
+b = modelo_log$coefficients[2]
+
+ggplot(datos_curanue, aes(x = ANCHO_MM, y = PESO)) +
+  geom_point(alpha = 0.4) +
+  stat_smooth(
+    method = "lm",
+    formula = y ~ exp(log(a) + b * log(x)),
+    se = TRUE,
+    color = "red"
+  )  +
+  labs(
+    x = "Amplitud Cefalotorácica (mm)",
+    y = "Peso (g)",
+    title = "Relación longitud-peso estimada para jaiba marmola (Curanué)"
+  ) +
+  theme_minimal()
+
+# Base de datos -------------------------------------------------------------------------------
+
+DATA <- read_excel("BD_RDD2_2022.xlsx")
+DATA <- head(DATA, -1)
+
+LagosT <- DATA %>% filter(REGION == "10", COD_ESPECIE %in% c("66", "550"),ARTE == "2",
+                          !is.na(N),
+                          N != "",
+                          N > 0)
+
+BuceoAncud <- DATA %>% filter(REGION == "10", PUERTO_RECALADA == "947", COD_ESPECIE %in% c("66", "550"),
+                              ARTE == "1")
+
+TrampasAncud <- DATA %>% filter(REGION == "10", PUERTO_RECALADA == "947", COD_ESPECIE %in% c("66", "550"),
+                                ARTE == "2")
+
+TrampasDalcahue <- DATA %>% filter(REGION == "10", PUERTO_RECALADA == "950", COD_ESPECIE %in% c("66", "550"),
+                                   ARTE == "2")
+
+TrampasCuranue <- DATA %>% filter(REGION == "10", PUERTO_RECALADA == "65", COD_ESPECIE %in% c("66", "550"),
+                                  ARTE == "2")
+
+
+# Funciones -----------------------------------------------------------------------------------
+
+RenBuc <- function(DATA){
+  n <- nrow(DATA)
+  d <- DATA$DESEMBARQUE
+  e <- DATA$HORAS
+  
+  U <- sum(d)/sum(e)
+  V <- (1/(n*(mean(e)^{2})))*(sum((d-U*e)^{2}))/(n-1)
+  
+  cat("El rendimiento estimado es:", U," kg jaiba/hora buceo\n")
+  cat("La variabilidad estimada del rendimiento estimado es:", V)
+}
+
+RenTram <- function(DATA){
+  n <- nrow(DATA)
+  d <- DATA$DESEMBARQUE
+  e <- DATA$N
+  
+  U <- sum(d)/sum(e)
+  V <- (1/(n*(mean(e)^{2})))*(sum((d-U*e)^{2}))/(n-1)
+  
+  cat("El rendimiento estimado es:", U," kg jaiba/trampa\n")
+  cat("La variabilidad estimada del rendimiento estimado es:", V)
+}
+
+BootStrap <- function(d,e,B){
+  n <- length(d)
+  resultados <- numeric(B)
+  for (b in 1:B) {
+    i <- sample(1:n,n,replace = T)
+    d_boot <- d[i]
+    e_boot <- e[i]
+    resultados[b] <- sum(d_boot)/sum(e_boot)
+  }
+  return(resultados)
+}
+
+RenReg <- function(data) {
+  # Asegurar que las variables existan
+  if(!all(c("DESEMBARQUE", "N") %in% names(data))) {
+    stop("El data frame debe contener las columnas 'DESEMBARQUE' y 'N'")
+  }
+  
+  # Ajuste del modelo lineal
+  m1 <- lm(DESEMBARQUE ~ N, data = data)
+  
+  # Extraer parámetros
+  b0 <- coef(m1)[1]
+  b1 <- coef(m1)[2]
+  
+  # Número de observaciones
+  n <- nrow(data)
+  
+  # Estimación de sigma^2
+  sigma2est <- sum(resid(m1)^2) / (n - 2)
+  
+  # Estadísticos de la variable N
+  xmedia <- mean(data$N)
+  sxx <- sum((data$N - xmedia)^2)
+  z <- n / sum(data$N)
+  
+  # Varianzas y covarianza de los estimadores
+  varb0 <- sigma2est * (1/n + (xmedia^2 / sxx))
+  varb1 <- sigma2est / sxx
+  covb0b1 <- -sigma2est * xmedia / sxx
+  
+  # Estimador de rendimiento U y su varianza
+  U <- b1 + z * b0
+  varU <- sigma2est * ((1 - z * xmedia)^2 / sxx + (z^2) / n)
+  
+  # Salida
+  cat("========================================\n")
+  cat("   ESTIMADOR DE REGRESIÓN (Cochran)\n")
+  cat("========================================\n\n")
+  cat("Coeficientes estimados:\n")
+  cat(sprintf("  b0 (Intercepto): %.6f\n", b0))
+  cat(sprintf("  b1 (Pendiente):  %.6f\n\n", b1))
+  
+  cat("Varianzas y covarianza:\n")
+  cat(sprintf("  Var(b0): %.6f\n", varb0))
+  cat(sprintf("  Var(b1): %.6f\n", varb1))
+  cat(sprintf("  Cov(b0, b1): %.6f\n\n", covb0b1))
+  
+  cat("Estimación del rendimiento:\n")
+  cat(sprintf("  U estimado (kg jaiba/trampa): %.6f\n", U))
+  cat(sprintf("  Var(U estimado): %.6f\n\n", varU))
+  
+  cat("========================================\n")
+  
+  # Retornar invisiblemente una lista con todos los resultados
+  invisible(list(
+    modelo = m1,
+    b0 = b0,
+    b1 = b1,
+    varb0 = varb0,
+    varb1 = varb1,
+    covb0b1 = covb0b1,
+    U = U,
+    varU = varU,
+    sigma2 = sigma2est,
+    z = z
+  ))
+}
+
+RenSchaefer <- function(data, N_var, Y_var, alpha = 0.05, plot = TRUE) {
+  # data  : data.frame con los datos
+  # N_var : nombre (string) de la variable esfuerzo (ej. "N")
+  # Y_var : nombre (string) de la variable desembarque (ej. "DESEMBARQUE")
+  # alpha : nivel para IC (por defecto 0.05 => IC 95%)
+  # plot  : si TRUE dibuja la nube y la curva ajustada
+  
+  # Extraer
+  E <- data[[N_var]]
+  Y <- data[[Y_var]]
+  
+  if (any(E == 0)) stop("Hay valores de esfuerzo (N) iguales a 0. El modelo no puede ajustarse.")
+  n <- length(E)
+  
+  # Starts sencillos: Uf = Y/E = a - b E
+  Uf <- Y / E
+  lm_R <- lm(Uf ~ E)
+  a_start <- coef(lm_R)[1]
+  b_start <- -coef(lm_R)[2]
+  
+  # Ajuste nls con control
+  # uso try() por si falla la convergencia, devolver error claro
+  fit_try <- try(nls(Y ~ a * E - b * E^2,
+                     start = list(a = a_start, b = b_start),
+                     control = nls.control(maxiter = 1000, warnOnly = TRUE)),
+                 silent = TRUE)
+  if (inherits(fit_try, "try-error")) stop("El ajuste nls falló. Intenta otros valores iniciales o nlsLM.")
+  modelo <- fit_try
+  
+  # Coeficientes
+  coefs <- coef(modelo)
+  a <- as.numeric(coefs["a"])
+  b <- as.numeric(coefs["b"])
+  
+  # Rendimiento estimado (total tipo RenTram)
+  Y_est <- a * E - b * E^2
+  R_total <- sum(Y_est) / sum(E)
+  
+  # Varianza del estimador por delta method usando vcov()
+  V <- vcov(modelo)       # 2x2
+  # derivadas
+  dR_da <- 1
+  dR_db <- - sum(E^2) / sum(E)
+  var_R <- as.numeric(dR_da^2 * V["a","a"] +
+                        dR_db^2 * V["b","b"] +
+                        2 * dR_da * dR_db * V["a","b"])
+  sd_R <- sqrt(var_R)
+  
+  # IC analítico (t con df = n - p)
+  p <- length(coefs)      # 2
+  df <- n - p
+  tcrit <- qt(1 - alpha/2, df = df)
+  CI_analitico <- R_total + c(-1,1) * tcrit * sd_R
+  
+  # Plot opcional
+  if (plot) {
+    plot(E, Y,
+         xlab = "Esfuerzo (N trampas)",
+         ylab = "Desembarque (kg)",
+         main = "Curva de rendimiento tipo Schaefer")
+    E_seq <- seq(min(E), max(E), length.out = 200)
+    Y_pred <- a * E_seq - b * E_seq^2
+    lines(E_seq, Y_pred, col = "blue", lwd = 2)
+  }
+  
+  # Resumen por consola
+  cat("\n--- RESUMEN DEL MODELO DE SCHAEFER ---\n")
+  cat(sprintf("Parámetro a (tasa inicial): %.6f\n", a))
+  cat(sprintf("Parámetro b (curvatura):   %.6f\n", b))
+  cat(sprintf("Rendimiento estimado R_hat: %.6f (kg por unidad de esfuerzo)\n", R_total))
+  cat(sprintf("Varianza estimada de R_hat: %.8f\n", var_R))
+  cat(sprintf("Desviación estándar (sd):   %.6f\n", sd_R))
+  cat(sprintf("IC analítico %.1f%% = [%.6f, %.6f] (t, df=%d)\n",
+              100*(1-alpha), CI_analitico[1], CI_analitico[2], df))
+  cat("----------------------------------------\n")
+  cat("Interpretación breve:\n")
+  cat(" - 'a' es el rendimiento por unidad de esfuerzo cuando E es muy pequeño.\n")
+  cat(" - 'b' mide la caída del rendimiento al aumentar el esfuerzo (mayor b -> más saturación).\n")
+  cat(" - La varianza indicada es la estimación (delta method) de la varianza de R_hat.\n\n")
+  
+  # Devolver lista con todo
+  invisible(list(
+    model_summary = summary(modelo),
+    coeficientes = coefs,
+    R_hat = R_total,
+    var_R = var_R,
+    sd_R = sd_R,
+    CI = CI_analitico,
+    df = df,
+    vcov = V
+  ))
+}
+
+# Desembarque y esfuerzo ----------------------------------------------------------------------
+
+## Buceo Ancud ----
+
+sum(BuceoAncud$DESEMBARQUE)
+sum(BuceoAncud$HORAS)
+
+tabla <- BuceoAncud %>% group_by(MES_ARRIBO) %>% summarise(total_desembarque = sum(DESEMBARQUE, na.rm = TRUE))
+tabla2 <- BuceoAncud %>% group_by(MES_ARRIBO) %>% summarise(total_horas = sum(HORAS, na.rm = TRUE))
+
+sum(tabla2$total_horas)
+
+round(tabla$total_desembarque/1000,3)
+sum(round(tabla2$total_horas,0))
+
+sum(tabla2$total_horas)
+
+round((tabla$total_desembarque/tabla2$total_horas),1)
+sum(round((tabla$total_desembarque/tabla2$total_horas),1))
+
+RenBuc(BuceoAncud)
+
+hist(BA)
+
+BA <- BootStrap(BuceoAncud$DESEMBARQUE,BuceoAncud$HORAS,5000)
+mean(BA)
+var(BA)
+
+### Serie de Tiempo ----
+
+datos <- merge(tabla, tabla2, by = "MES_ARRIBO")
+
+datos$total_desembarque <- round(datos$total_desembarque/1000,3)
+
+ggplot(datos, aes(x = factor(MES_ARRIBO))) +
+  # Barras para Desembarque
+  geom_bar(aes(y = total_desembarque, fill = "Desembarque (t)"), 
+           stat = "identity", width = 0.7) +
+  # Línea para Esfuerzo (reescala correctamente)
+  geom_line(aes(y = total_horas * max(total_desembarque) / max(total_horas), 
+                color = "Esfuerzo de pesca"), 
+            linewidth = 1.2, group = 1) +
+  # Ejes y escalas
+  scale_y_continuous(
+    name = "Desembarque (t)",
+    breaks = seq(0, max(datos$total_desembarque) + 0.25, by = 0.25),
+    expand = expansion(mult = c(0, 0.05)),
+    sec.axis = sec_axis(
+      trans = ~ . * max(datos$total_horas) / max(datos$total_desembarque),
+      name = "Esfuerzo (Horas de buceo)",
+      breaks = seq(0, max(datos$total_horas) + 15, by = 15)
+    )
+  ) +
+  # Etiquetas del eje X
+  scale_x_discrete(
+    name = "Mes de arribo",
+    labels = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+  ) +
+  # Colores
+  scale_fill_manual(values = c("Desembarque (t)" = "steelblue")) +
+  scale_color_manual(values = c("Esfuerzo de pesca" = "brown")) +
+  # Tema y formato
+  theme_classic() +
+  theme(
+    axis.title.y.left = element_text(size = 11, margin = margin(r = 10)),
+    axis.title.y.right = element_text(size = 11, margin = margin(l = 10)),
+    axis.text.x = element_text(angle = 0, hjust = 0.5),
+    axis.title.x = element_text(vjust = -2.5), # ↓ Mueve el título del eje X hacia abajo
+    legend.title = element_blank(),
+    legend.position = "bottom",
+    legend.text = element_text(size = 10)
+  )
+
+ggplot(datos, aes(x = factor(MES_ARRIBO), 
+                  y = total_desembarque / total_horas, 
+                  group = 1)) +
+  geom_line(color = "limegreen", linewidth = 1.2) +
+  geom_point(color = "darkgreen", size = 3) +
+  scale_x_discrete(
+    name = "Mes de arribo",
+    labels = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+  ) +
+  scale_y_continuous(
+    name = "Rendimiento (Kg jaiba/Hora de buceo)",
+    limits = c(0, NA),
+    breaks = seq(0, max(datos$total_desembarque / datos$total_horas, na.rm = TRUE) + 10, by = 10),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  theme_minimal() +
+  theme(
+    axis.title.x = element_text(vjust = 0, margin = margin(t = 10)),
+    axis.title.y = element_text(size = 11, margin = margin(r = 10)),
+    axis.text.x  = element_text(angle = 0, hjust = 0.5, margin = margin(t = 6))
+  )
+
+
+## TrampasAncud ----
+
+cor(TrampasAncud$DESEMBARQUE,TrampasAncud$N)
+
+sum(TrampasAncud$DESEMBARQUE)
+sum(TrampasAncud$N)
+
+tabla3 <- TrampasAncud %>% group_by(MES_ARRIBO) %>% summarise(total_desembarque = sum(DESEMBARQUE, na.rm = TRUE))
+tabla4 <- TrampasAncud %>% group_by(MES_ARRIBO) %>% summarise(total_trampas = sum(N, na.rm = TRUE))
+
+round(tabla3$total_desembarque/1000,3)
+mean(tabla4$total_trampas)
+
+tabla4
+
+sum(tabla4$total_trampas)
+
+round((tabla3$total_desembarque/tabla4$total_trampas),2)
+
+sum(round((tabla3$total_desembarque/tabla4$total_trampas),2))
+
+sum(tabla3$total_desembarque)/sum(tabla4$total_trampas)
+
+RenTram(TrampasAncud)
+
+plot(TrampasAncud$N, TrampasAncud$DESEMBARQUE,
+     xlab = "Esfuerzo (trampas)",
+     ylab = "Desembarque (kg jaiba)",
+     pch = 19, col = "darkblue")
+abline(lm(DESEMBARQUE ~ N, data = TrampasAncud), col = "red", lwd = 2)
+
+m1 <- lm(DESEMBARQUE ~ N, data = TrampasAncud)
+summary(m1)
+
+hist(m1$residuals,breaks = 50)
+
+ad.test(m1$residuals)
+lillie.test(m1$residuals)
+
+plot(m1$residuals)
+bptest(m1)
+
+n <- nrow(TrampasAncud) ; n
+
+b0 <- coef(m1)[1] ; b0
+b1 <- coef(m1)[2] ; b1
+
+yest <- fitted(m1) 
+sigma2est <- (sum(resid(m1)^{2}))/(n-2) ; sigma2est
+
+xmedia <- mean(TrampasAncud$N) ; xmedia
+sxx <- sum((TrampasAncud$N-xmedia)^{2}) ; sxx
+
+z <- n/sum(TrampasAncud$N) ; z
+
+varb0 <- sigma2est*(1/n + xmedia^{2}/sxx) ; varb0
+
+varb1 <- sigma2est/sxx ; varb1
+
+covb0b1 <- -sigma2est*xmedia/sxx ; covb0b1
+
+U <- b1+z*b0 ; U
+
+varU <- sigma2est*((1-z*xmedia)^{2}/sxx+(z^{2})/n) ; varU 
+
+RenReg(TrampasAncud)
+
+Uf <- TrampasAncud$DESEMBARQUE/TrampasAncud$N
+
+hist(Uf,breaks = 50,probability = T)
+lines(density(Uf), col = "red", lwd = 2)
+
+ad.test(Uf)
+lillie.test(Uf)
+
+seU <- sqrt(varU)
+zcrit <- qnorm(1 - 0.05/2)
+
+ic <- U + c(-1, 1) * zcrit * seU
+
+boxplot(TrampasAncud$DESEMBARQUE ~ TrampasAncud$MES_ARRIBO)
+boxplot(TrampasAncud$N ~ TrampasAncud$MES_ARRIBO)
+
+### Serie de Tiempo ----
+
+datos2 <- merge(tabla3, tabla4, by = "MES_ARRIBO")
+
+datos2$total_desembarque <- round(datos2$total_desembarque/1000,3)
+
+ggplot(datos2, aes(x = factor(MES_ARRIBO))) +
+  # Barras para Desembarque
+  geom_bar(aes(y = total_desembarque, fill = "Desembarque (t)"), 
+           stat = "identity", width = 0.7) +
+  # Línea para Esfuerzo (reescala correctamente)
+  geom_line(aes(y = total_trampas * max(total_desembarque) / max(total_trampas), 
+                color = "Esfuerzo de pesca"), 
+            linewidth = 1.2, group = 1) +
+  # Ejes y escalas
+  scale_y_continuous(
+    name = "Desembarque (t)",
+    breaks = seq(0, max(datos2$total_desembarque) + 5, by = 5),
+    expand = expansion(mult = c(0, 0.05)),
+    sec.axis = sec_axis(
+      trans = ~ . * max(datos2$total_trampas) / max(datos2$total_desembarque),
+      name = "Esfuerzo (Cantidad de trampas)",
+      breaks = seq(0, max(datos2$total_trampas) + 500, by = 500)
+    )
+  ) +
+  # Etiquetas del eje X
+  scale_x_discrete(
+    name = "Mes de arribo",
+    labels = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+  ) +
+  # Colores
+  scale_fill_manual(values = c("Desembarque (t)" = "steelblue")) +
+  scale_color_manual(values = c("Esfuerzo de pesca" = "brown")) +
+  # Tema y formato
+  theme_classic() +
+  theme(
+    axis.title.y.left = element_text(size = 11, margin = margin(r = 10)),
+    axis.title.y.right = element_text(size = 11, margin = margin(l = 10)),
+    axis.text.x = element_text(angle = 0, hjust = 0.5),
+    axis.title.x = element_text(vjust = -2.5), # ↓ Mueve el título del eje X hacia abajo
+    legend.title = element_blank(),
+    legend.position = "bottom",
+    legend.text = element_text(size = 10)
+  )
+
+ggplot(datos2, aes(x = factor(MES_ARRIBO), 
+                   y = total_desembarque / total_trampas, 
+                   group = 1)) +
+  geom_line(color = "limegreen", linewidth = 1.2) +
+  geom_point(color = "darkgreen", size = 3) +
+  scale_x_discrete(
+    name = "Mes de arribo",
+    labels = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+  ) +
+  scale_y_continuous(
+    name = "Rendimiento (Kg jaiba/Trampa)",
+    limits = c(0, NA),
+    breaks = seq(0, max(datos2$total_desembarque / datos2$total_trampas, na.rm = TRUE) + 1, by = 1),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  theme_minimal() +
+  theme(
+    axis.title.x = element_text(vjust = 0, margin = margin(t = 10)),
+    axis.title.y = element_text(size = 11, margin = margin(r = 10)),
+    axis.text.x  = element_text(angle = 0, hjust = 0.5, margin = margin(t = 6))
+  )
+
+
+## Trampas Dalcahue ----
+
+sum(TrampasDalcahue$DESEMBARQUE)
+sum(TrampasDalcahue$N)
+
+tabla5 <- TrampasDalcahue %>% group_by(MES_ARRIBO) %>% summarise(total_desembarque = sum(DESEMBARQUE, na.rm = TRUE))
+tabla7 <- TrampasDalcahue %>% group_by(MES_ARRIBO) %>% summarise(total_trampas = sum(N, na.rm = TRUE))
+
+
+round(tabla5$total_desembarque/1000,3)
+
+tabla7
+
+sum(tabla7$total_trampas)
+
+round((tabla5$total_desembarque/tabla7$total_trampas),2)
+
+sum(round((tabla5$total_desembarque/tabla7$total_trampas),2))
+
+sum(tabla5$total_desembarque)/sum(tabla7$total_trampas)
+
+RenTram(TrampasDalcahue)
+
+plot(TrampasDalcahue$N, TrampasDalcahue$DESEMBARQUE,
+     xlab = "Esfuerzo (trampas)",
+     ylab = "Desembarque (kg jaiba)",
+     pch = 19, col = "darkblue")
+abline(lm(DESEMBARQUE ~ N, data = TrampasDalcahue), col = "red", lwd = 2)
+
+RenReg(TrampasDalcahue)
+
+### Serie de Tiempo ----
+
+datos3 <- merge(tabla5, tabla7, by = "MES_ARRIBO")
+
+datos3$total_desembarque <- round(datos3$total_desembarque/1000,3)
+
+ggplot(datos3, aes(x = factor(MES_ARRIBO))) +
+  # Barras para Desembarque
+  geom_bar(aes(y = total_desembarque, fill = "Desembarque (t)"), 
+           stat = "identity", width = 0.7) +
+  # Línea para Esfuerzo (reescala correctamente)
+  geom_line(aes(y = total_trampas * max(total_desembarque) / max(total_trampas), 
+                color = "Esfuerzo de pesca"), 
+            linewidth = 1.2, group = 1) +
+  # Ejes y escalas
+  scale_y_continuous(
+    name = "Desembarque (t)",
+    breaks = seq(0, max(datos3$total_desembarque) + 1.5, by = 1.5),
+    expand = expansion(mult = c(0, 0.05)),
+    sec.axis = sec_axis(
+      trans = ~ . * max(datos3$total_trampas) / max(datos3$total_desembarque),
+      name = "Esfuerzo (Cantidad de trampas)",
+      breaks = seq(0, max(datos3$total_trampas) + 250, by = 250)
+    )
+  ) +
+  # Etiquetas del eje X
+  scale_x_discrete(
+    name = "Mes de arribo",
+    labels = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+  ) +
+  # Colores
+  scale_fill_manual(values = c("Desembarque (t)" = "steelblue")) +
+  scale_color_manual(values = c("Esfuerzo de pesca" = "brown")) +
+  # Tema y formato
+  theme_classic() +
+  theme(
+    axis.title.y.left = element_text(size = 11, margin = margin(r = 10)),
+    axis.title.y.right = element_text(size = 11, margin = margin(l = 10)),
+    axis.text.x = element_text(angle = 0, hjust = 0.5),
+    axis.title.x = element_text(vjust = -2.5), # ↓ Mueve el título del eje X hacia abajo
+    legend.title = element_blank(),
+    legend.position = "bottom",
+    legend.text = element_text(size = 10)
+  )
+
+ggplot(datos3, aes(x = factor(MES_ARRIBO), 
+                   y = total_desembarque / total_trampas, 
+                   group = 1)) +
+  geom_line(color = "limegreen", linewidth = 1.2) +
+  geom_point(color = "darkgreen", size = 3) +
+  scale_x_discrete(
+    name = "Mes de arribo",
+    labels = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+  ) +
+  scale_y_continuous(
+    name = "Rendimiento (Kg jaiba/Trampa)",
+    limits = c(0, NA),
+    breaks = seq(0, max(datos3$total_desembarque / datos3$total_trampas, na.rm = TRUE) + 1, by = 1),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  theme_minimal() +
+  theme(
+    axis.title.x = element_text(vjust = 0, margin = margin(t = 10)),
+    axis.title.y = element_text(size = 11, margin = margin(r = 10)),
+    axis.text.x  = element_text(angle = 0, hjust = 0.5, margin = margin(t = 6))
+  )
+
+
+## Trampas Curanue ----
+
+sum(TrampasCuranue$DESEMBARQUE)
+sum(TrampasCuranue$N)
+
+tabla6 <- TrampasCuranue %>% group_by(MES_ARRIBO) %>% summarise(total_desembarque = sum(DESEMBARQUE, na.rm = TRUE))
+tabla8 <- TrampasCuranue %>% group_by(MES_ARRIBO) %>% summarise(total_trampas = sum(N, na.rm = TRUE))
+
+round(tabla6$total_desembarque/1000,3)
+
+tabla8
+
+sum(tabla8$total_trampas)
+
+round((tabla6$total_desembarque/tabla8$total_trampas),2)
+
+sum(round((tabla6$total_desembarque/tabla8$total_trampas),2))
+
+sum(tabla6$total_desembarque)/sum(tabla8$total_trampas)
+
+datos3 <- merge(tabla5, tabla7, by = "MES_ARRIBO")
+
+datos3$total_desembarque <- round(datos3$total_desembarque/1000,3)
+
+plot(TrampasCuranue$N, TrampasCuranue$DESEMBARQUE,
+     xlab = "Esfuerzo (trampas)",
+     ylab = "Desembarque (kg jaiba)",
+     pch = 19, col = "darkblue")
+abline(lm(DESEMBARQUE ~ N, data = TrampasCuranue), col = "red", lwd = 2)
+
+RenTram(TrampasCuranue)
+
+RenReg(TrampasCuranue)
+
+### Serie de Tiempo ----
+
+datos4 <- merge(tabla6, tabla8, by = "MES_ARRIBO")
+
+datos4$total_desembarque <- round(datos4$total_desembarque/1000,3)
+
+ggplot(datos4, aes(x = factor(MES_ARRIBO))) +
+  # Barras para Desembarque
+  geom_bar(aes(y = total_desembarque, fill = "Desembarque (t)"), 
+           stat = "identity", width = 0.7) +
+  # Línea para Esfuerzo (reescala correctamente)
+  geom_line(aes(y = total_trampas * max(total_desembarque) / max(total_trampas), 
+                color = "Esfuerzo de pesca"), 
+            linewidth = 1.2, group = 1) +
+  # Ejes y escalas
+  scale_y_continuous(
+    name = "Desembarque (t)",
+    breaks = seq(0, max(datos4$total_desembarque) + 1.25, by = 1.25),
+    expand = expansion(mult = c(0, 0.05)),
+    sec.axis = sec_axis(
+      trans = ~ . * max(datos4$total_trampas) / max(datos4$total_desembarque),
+      name = "Esfuerzo (Cantidad de trampas)",
+      breaks = seq(0, max(datos4$total_trampas) + 100, by = 100)
+    )
+  ) +
+  # Etiquetas del eje X
+  scale_x_discrete(
+    name = "Mes de arribo",
+    labels = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+  ) +
+  # Colores
+  scale_fill_manual(values = c("Desembarque (t)" = "steelblue")) +
+  scale_color_manual(values = c("Esfuerzo de pesca" = "brown")) +
+  # Tema y formato
+  theme_classic() +
+  theme(
+    axis.title.y.left = element_text(size = 11, margin = margin(r = 10)),
+    axis.title.y.right = element_text(size = 11, margin = margin(l = 10)),
+    axis.text.x = element_text(angle = 0, hjust = 0.5),
+    axis.title.x = element_text(vjust = -2.5), # ↓ Mueve el título del eje X hacia abajo
+    legend.title = element_blank(),
+    legend.position = "bottom",
+    legend.text = element_text(size = 10)
+  )
+
+ggplot(datos4, aes(x = factor(MES_ARRIBO), 
+                   y = total_desembarque / total_trampas, 
+                   group = 1)) +
+  geom_line(color = "limegreen", linewidth = 1.2) +
+  geom_point(color = "darkgreen", size = 3) +
+  scale_x_discrete(
+    name = "Mes de arribo",
+    labels = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+  ) +
+  scale_y_continuous(
+    name = "Rendimiento (Kg jaiba/Trampa)",
+    limits = c(0, NA),
+    breaks = seq(0, max(datos4$total_desembarque / datos4$total_trampas, na.rm = TRUE) + 2, by = 2),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  theme_minimal() +
+  theme(
+    axis.title.x = element_text(vjust = 0, margin = margin(t = 10)),
+    axis.title.y = element_text(size = 11, margin = margin(r = 10)),
+    axis.text.x  = element_text(angle = 0, hjust = 0.5, margin = margin(t = 6))
+  )
+
+
+
+
+
+
+
+
+
+
+
+
+
+RenRegMulti <- function(data, xname = "N", covariates = NULL,
+                        alpha = 0.05, boot = FALSE, B = 1000, seed = 123) {
+  # data: data.frame con columnas DESEMBARQUE y xname y covariates si los hay
+  # xname: nombre (string) de la variable esfuerzo, p.ej. "N"
+  # covariates: vector de nombres (strings) de variables auxiliares, p.ej. c("MES")
+  #   las variables en 'covariates' se incluirán como factores automáticamente
+  # boot: si TRUE, calcula IC bootstrap (percentil) con B réplicas
+  # devuelve lista invisible con resultados y muestra un resumen tipo RenTram
+  
+  # chequeos
+  if (!("DESEMBARQUE" %in% names(data))) stop("data debe tener columna 'DESEMBARQUE'")
+  if (!(xname %in% names(data))) stop(paste0("data debe tener columna '", xname, "'"))
+  n <- nrow(data)
+  
+  # construir fórmula
+  formula_parts <- xname
+  if (!is.null(covariates)) {
+    # convertir covariates a factor en la fórmula
+    cov_terms <- sapply(covariates, function(v) paste0("factor(", v, ")"))
+    formula_parts <- c(formula_parts, cov_terms)
+  }
+  fmla <- as.formula(paste("DESEMBARQUE ~", paste(formula_parts, collapse = " + ")))
+  
+  # ajustar modelo
+  m <- lm(fmla, data = data)
+  coef_hat <- coef(m)
+  p <- length(coef_hat)
+  
+  # matriz de diseño y sumas de columnas (coincide con coef names)
+  MM <- model.matrix(m)       # n x p
+  sums_cols <- colSums(MM)    # vector longitud p, nombre coincide con coef names
+  sum_x <- sum(data[[xname]])
+  
+  # vector 'a' para delta method: a_j = sum(column_j) / sum_x
+  a_vec <- as.numeric(sums_cols / sum_x)
+  names(a_vec) <- names(coef_hat)
+  
+  # cov matrix of coef
+  Vcoef <- vcov(m)            # p x p
+  # estimated U and var(U)
+  U_hat <- sum(sums_cols * coef_hat) / sum_x     # = t(a_vec) %*% coef_hat
+  varU_hat <- as.numeric(t(a_vec) %*% Vcoef %*% a_vec)
+  seU_hat <- sqrt(varU_hat)
+  
+  # degrees freedom and t critical
+  df <- n - p
+  tcrit <- qt(1 - alpha/2, df = df)
+  CI_analitico <- U_hat + c(-1,1) * tcrit * seU_hat
+  
+  # bootstrap opcional: remuestrear filas, recalcular (coef, sums, U_boot)
+  CI_boot <- NULL
+  meanUboot <- sdUboot <- NA
+  if (boot) {
+    set.seed(seed)
+    Uboot <- numeric(B)
+    for (b in seq_len(B)) {
+      i <- sample.int(n, size = n, replace = TRUE)
+      dboot <- data[i, , drop = FALSE]
+      mboot <- lm(fmla, data = dboot)
+      # recomputar sums_cols_boot (usar model.matrix de la muestra bootstrap)
+      MMb <- model.matrix(mboot)
+      # Es importante alinear nombres: si alguna categoría no aparece en bootstrap,
+      # las columnas pueden cambiar. Para robustez, usaremos coefs y sums según mm colnames.
+      coefs_b <- coef(mboot)
+      sums_b <- colSums(MMb)
+      sum_x_b <- sum(dboot[[xname]])
+      Uboot[b] <- sum(sums_b * coefs_b) / sum_x_b
+    }
+    CI_boot <- quantile(Uboot, probs = c(alpha/2, 1 - alpha/2), na.rm = TRUE)
+    meanUboot <- mean(Uboot, na.rm = TRUE)
+    sdUboot <- sd(Uboot, na.rm = TRUE)
+  }
+  
+  # impresión tipo RenTram
+  cat("========================================\n")
+  cat("  ESTIMADOR DE REGRESIÓN MULTIPLE (Cochran extendido)\n")
+  cat("========================================\n\n")
+  cat("Fórmula ajustada:\n")
+  cat(deparse(fmla), "\n\n")
+  
+  cat("Coeficientes estimados (coef_hat):\n")
+  print(round(coef_hat, 6))
+  cat("\nMatriz de var-cov de coeficientes (vcov):\n")
+  print(round(Vcoef, 4))
+  cat("\nSumas de columnas de la matriz de diseño (s_j):\n")
+  print(round(sums_cols, 4))
+  cat("\nVector a (s_j / sum(x)):\n")
+  print(round(a_vec, 6))
+  cat("\nEstimación del rendimiento:\n")
+  cat(sprintf("  U estimado (kg jaiba/%s): %.6f\n", xname, U_hat))
+  cat(sprintf("  Var(U estimado): %.6f\n", varU_hat))
+  cat(sprintf("  se(U): %.6f\n\n", seU_hat))
+  cat(sprintf("  IC analítico %.1f%% = [%.6f, %.6f] (t, df=%d)\n",
+              100*(1-alpha), CI_analitico[1], CI_analitico[2], df))
+  if (boot) {
+    cat(sprintf("  IC bootstrap (percentil %.1f%%) = [%.6f, %.6f]\n",
+                100*(1-alpha), CI_boot[1], CI_boot[2]))
+    cat(sprintf("  mean(Uboot)=%.6f  sd(Uboot)=%.6f (B=%d)\n", meanUboot, sdUboot, B))
+  }
+  cat("\n========================================\n")
+  
+  # devolver resultados
+  invisible(list(
+    model = m,
+    coef = coef_hat,
+    vcov = Vcoef,
+    sums_cols = sums_cols,
+    a = a_vec,
+    U = U_hat,
+    varU = varU_hat,
+    seU = seU_hat,
+    CI_analitico = CI_analitico,
+    CI_boot = CI_boot,
+    Uboot_mean = meanUboot,
+    Uboot_sd = sdUboot,
+    df = df
+  ))
+}
+
+res <- RenRegMulti(TrampasAncud, xname = "N", covariates = c("MES_ARRIBO"),
+                   alpha = 0.05, boot = TRUE, B = 1000, seed = 2025)
+
+m2 <- lm(DESEMBARQUE ~ N + MES_ARRIBO, data = TrampasAncud)
+summary(m2)
+
+
+
+anova <- aov(DESEMBARQUE~MES_ZARPE,data = TrampasAncud)
+summary(anova)
+
+
+# Correlaciones -------------------------------------------------------------------------------
+
+cor(BuceoAncud$DESEMBARQUE,BuceoAncud$HORAS)
+cor(TrampasAncud$DESEMBARQUE,TrampasAncud$N)
+cor(TrampasDalcahue$DESEMBARQUE,TrampasDalcahue$N)
+cor(TrampasDalcahue$DESEMBARQUE,TrampasDalcahue$N)
+
+RenTram(TrampasAncud)
+RenReg(TrampasAncud)
+
+
+RenSchaefer(TrampasAncud, N_var = "N", Y_var = "DESEMBARQUE")
+RenTram(TrampasAncud)
+RenReg(TrampasAncud)
+
+RenSchaefer(TrampasDalcahue,N_var = "N",Y_var = "DESEMBARQUE")
+RenTram(TrampasDalcahue)
+RenReg(TrampasDalcahue)
+
+RenSchaefer(LagosT,N_var = "N",Y_var = "DESEMBARQUE")
+RenTram(LagosT)
+RenReg(LagosT)
+
+cor(TrampasAncud$N,TrampasAncud$DESEMBARQUE)
+cor(TrampasDalcahue$N,TrampasDalcahue$DESEMBARQUE)
+
+RenSchaefer(TrampasDalcahue,N_var = "N",Y_var = "DESEMBARQUE")
+
+set.seed(123)
+B <- 1000 # número de remuestreos
+R_boot <- numeric(B)
+
+E <- TrampasDalcahue$N
+Y <- TrampasDalcahue$DESEMBARQUE
+
+a <- 5.699564
+b <- 0.003647
+
+a_boot <- numeric(B)
+b_boot <- numeric(B)
+
+for (i in 1:B) {
+  idx <- sample(seq_along(E), replace = TRUE)
+  E_b <- E[idx]; Y_b <- Y[idx]
+  
+  try({
+    fit_b <- nls(Y_b ~ a * E_b - b * E_b^2, start = list(a = a, b = b))
+    coef_b <- coef(fit_b)
+    a_boot[i] <- coef_b["a"]
+    b_boot[i] <- coef_b["b"]
+    
+    Y_est_b <- coef_b["a"] * E_b - coef_b["b"] * E_b^2
+    R_total_b <- sum(Y_est_b) / sum(E_b)
+    R_boot[i] <- R_total_b
+  }, silent = TRUE)
+}
+
+R_mean <- mean(R_boot, na.rm = TRUE) ; R_mean
+R_sd <- sd(R_boot, na.rm = TRUE) ; R_sd^{2}
+IC_boot <- quantile(R_boot, probs = c(0.025, 0.975), na.rm = TRUE) ; IC_boot
+
+# Intervalos bootstrap de a y b:
+a_mean <- mean(a_boot) ; a_mean
+IC_a <- quantile(a_boot, probs = c(0.025, 0.975), na.rm = TRUE) ; IC_a
+b_mean <- mean(b_boot) ; b_mean
+IC_b <- quantile(b_boot, probs = c(0.025, 0.975), na.rm = TRUE) ; IC_b
+
+E_msy <- a_mean/(2*b_mean) ; E_msy
+U_msy <- (a_mean^{2})/(4*b_mean) ; U_msy
+
+
+
+
+plot_desembarque <- function(data, xvar = "N", yvar = "DESEMBARQUE") {
+  # Calcular correlación
+  r <- cor(data[[xvar]], data[[yvar]], use = "complete.obs", method = "pearson")
+  
+  # Crear texto de leyenda
+  corr_label <- paste0("r = ", round(r, 2))
+  
+  # Generar gráfico
+  ggplot(data, aes_string(x = xvar, y = yvar)) +
+    geom_point(color = "darkblue", size = 2) +
+    labs(x = "Esfuerzo (horas)",
+         y = "Desembarque (kg jaiba)") +
+    annotate("text",
+             x = Inf, y = Inf,
+             label = corr_label,
+             hjust = 1.1, vjust = 2,
+             color = "black", size = 7) +
+    theme_bw() +
+    theme(
+      legend.position = "none",
+      plot.title = element_blank(),
+      plot.subtitle = element_blank()
+    )
+}
+
+# Ejemplo de uso:
+
+plot_desembarque(BuceoAncud,xvar = "HORAS",yvar = "DESEMBARQUE")
+plot_desembarque(TrampasAncud,xvar = "N",yvar = "DESEMBARQUE")
+plot_desembarque(TrampasDalcahue,xvar = "N",yvar = "DESEMBARQUE")
+plot_desembarque(TrampasCuranue,xvar = "N",yvar = "DESEMBARQUE")
+
+############## BAYES IC #################
+
+TRAMPAS_MARMOLA_2022 = read_excel("TRAMPAS_MARMOLA_2022.xlsx")
+View(TRAMPAS_MARMOLA_2022)
+
+datos = TRAMPAS_MARMOLA_2022 %>%
+  filter(SEXO == 1, ARTE == 2, MES == 1)
+
+plot(density(datos$ANCHO_MM))
+max(datos$ANCHO_MM)
+
+y = datos$ANCHO_MM
+n = length(y)
+
+# SEXO: 1,2 ; Macho, Hembra
+# PUERTO_RECALADA: 65,938,947, 950 ; Curanué, Calbuco, Ancud, Dalcahue
+# ARTE: 1,2 ; Buceo, Trampa
+
+#### ANCUD TRAMPA ----
+
+set.seed(123)
+results <- matrix(NA_real_, nrow = 12, ncol = 8)
+colnames(results) <- c("Media_macho", "Var_macho", "IC_2.5_macho", "IC_97.5_macho",
+                       "Media_hembra", "Var_hembra", "IC_2.5_hembra", "IC_97.5_hembra")
+
+for(i in 1:12) {
+  
+  # Tabla de tallas por mes
+  tab <- table(TRAMPAS_MARMOLA_2022$ANCHO_MM[
+    TRAMPAS_MARMOLA_2022$MES == i &
+      TRAMPAS_MARMOLA_2022$SEXO == 1 &
+      TRAMPAS_MARMOLA_2022$PUERTO_RECALADA == 947 &
+      TRAMPAS_MARMOLA_2022$ARTE == 2
+  ])
+  
+  # Si el mes no tiene datos, pasa al siguiente
+  if(length(tab) == 0) next
+  
+  talla  <- as.numeric(names(tab))   # t_j
+  counts <- as.numeric(tab)          # n_j
+  K <- length(talla)
+  
+  # Modelo: Dirichlet sobre pesos de tallas
+  model_string <- "
+  model{
+    w[1:K] ~ ddirch(alpha[1:K])
+    theta <- inprod(w[1:K], talla[1:K])   # media de talla (estimador)
+  }
+  "
+  
+  j <- jags.model(textConnection(model_string),
+                  data = list(K=K, talla=talla, alpha=1 + counts),
+                  n.chains = 2, quiet=TRUE)
+  update(j, 1000)
+  
+  samp <- coda.samples(j, "theta", n.iter = 3000)
+  th <- as.numeric(as.matrix(samp))
+  
+  # Resumen posterior
+  media_post <- mean(th)
+  IC95 <- quantile(th, c(0.025, 0.975))
+  var_post <- var(th)
+  
+  # Guardar en la matriz
+  results[i,1] <- media_post
+  results[i,2] <- var_post
+  results[i,3] <- IC95[1]
+  results[i,4] <- IC95[2]
+  
+  # Tabla de tallas por mes
+  tab <- table(TRAMPAS_MARMOLA_2022$ANCHO_MM[
+    TRAMPAS_MARMOLA_2022$MES == i &
+      TRAMPAS_MARMOLA_2022$SEXO == 2 &
+      TRAMPAS_MARMOLA_2022$PUERTO_RECALADA == 947 &
+      TRAMPAS_MARMOLA_2022$ARTE == 2
+  ])
+  
+  # Si el mes no tiene datos, pasa al siguiente
+  if(length(tab) == 0) next
+  
+  talla  <- as.numeric(names(tab))   # t_j
+  counts <- as.numeric(tab)          # n_j
+  K <- length(talla)
+  
+  # Modelo: Dirichlet sobre pesos de tallas
+  model_string <- "
+  model{
+    w[1:K] ~ ddirch(alpha[1:K])
+    theta <- inprod(w[1:K], talla[1:K])   # media de talla (estimador)
+  }
+  "
+  
+  j <- jags.model(textConnection(model_string),
+                  data = list(K=K, talla=talla, alpha=1 + counts),
+                  n.chains = 2, quiet=TRUE)
+  update(j, 1000)
+  
+  samp <- coda.samples(j, "theta", n.iter = 3000)
+  th <- as.numeric(as.matrix(samp))
+  
+  # Resumen posterior
+  media_post <- mean(th)
+  IC95 <- quantile(th, c(0.025, 0.975))
+  var_post <- var(th)
+  
+  # Guardar en la matriz
+  results[i,5] <- media_post
+  results[i,6] <- var_post
+  results[i,7] <- IC95[1]
+  results[i,8] <- IC95[2]
+}
+round(results,4)
+
+res_macho <- data.frame(
+  MES     = 1:12,
+  Media   = results[, "Media_macho"],
+  IC_2.5  = results[, "IC_2.5_macho"],
+  IC_97.5 = results[, "IC_97.5_macho"],
+  Var     = results[, "Var_macho"],
+  SEXO    = "Macho"
+)
+
+res_hembra <- data.frame(
+  MES     = 1:12,
+  Media   = results[, "Media_hembra"],
+  IC_2.5  = results[, "IC_2.5_hembra"],
+  IC_97.5 = results[, "IC_97.5_hembra"],
+  Var     = results[, "Var_hembra"],
+  SEXO    = "Hembra"
+)
+
+## --- Plot 1: Macho ---
+ggplot(res_macho, aes(x = MES, y = Media)) +
+  geom_ribbon(aes(ymin = IC_2.5, ymax = IC_97.5), fill = "skyblue", alpha = 0.25, na.rm = TRUE) +
+  geom_line(color = "blue", linewidth = 1, na.rm = TRUE) +
+  geom_point(color = "blue", size = 2, na.rm = TRUE) +
+  scale_x_continuous(breaks = 1:12) +
+  labs(
+    x = "Mes", y = "Talla media (mm)",
+    title = "Serie de tiempo: talla media bayesiana (IC 95%)",
+    subtitle = "SEXO: Macho • Puerto Ancud • Trampa"
+  ) +
+  theme_minimal(base_size = 12)
+
+## --- Plot 2: Hembra ---
+ggplot(res_hembra, aes(x = MES, y = Media)) +
+  geom_ribbon(aes(ymin = IC_2.5, ymax = IC_97.5), fill = "plum", alpha = 0.25, na.rm = TRUE) +
+  geom_line(color = "red", linewidth = 1, na.rm = TRUE) +
+  geom_point(color = "red", size = 2, na.rm = TRUE) +
+  scale_x_continuous(breaks = 1:12) +
+  labs(
+    x = "Mes", y = "Talla media (mm)",
+    title = "Serie de tiempo: talla media bayesiana (IC 95%)",
+    subtitle = "SEXO: Hembra • Puerto Ancud • Trampa"
+  ) +
+  theme_minimal(base_size = 12)
+
+
+#### ANCUD BUCEO ----
+
+set.seed(123)
+results <- matrix(NA_real_, nrow = 12, ncol = 8)
+colnames(results) <- c("Media_macho", "Var_macho", "IC_2.5_macho", "IC_97.5_macho",
+                       "Media_hembra", "Var_hembra", "IC_2.5_hembra", "IC_97.5_hembra")
+
+for(i in 1:12) {
+  
+  # Tabla de tallas por mes
+  tab <- table(TRAMPAS_MARMOLA_2022$ANCHO_MM[
+    TRAMPAS_MARMOLA_2022$MES == i &
+      TRAMPAS_MARMOLA_2022$SEXO == 1 &
+      TRAMPAS_MARMOLA_2022$PUERTO_RECALADA == 947 &
+      TRAMPAS_MARMOLA_2022$ARTE == 1
+  ])
+  
+  # Si el mes no tiene datos, pasa al siguiente
+  if(length(tab) == 0) next
+  
+  talla  <- as.numeric(names(tab))   # t_j
+  counts <- as.numeric(tab)          # n_j
+  K <- length(talla)
+  
+  # Modelo: Dirichlet sobre pesos de tallas
+  model_string <- "
+  model{
+    w[1:K] ~ ddirch(alpha[1:K])
+    theta <- inprod(w[1:K], talla[1:K])   # media de talla (estimador)
+  }
+  "
+  
+  j <- jags.model(textConnection(model_string),
+                  data = list(K=K, talla=talla, alpha=1 + counts),
+                  n.chains = 2, quiet=TRUE)
+  update(j, 1000)
+  
+  samp <- coda.samples(j, "theta", n.iter = 3000)
+  th <- as.numeric(as.matrix(samp))
+  
+  # Resumen posterior
+  media_post <- mean(th)
+  IC95 <- quantile(th, c(0.025, 0.975))
+  var_post <- var(th)
+  
+  # Guardar en la matriz
+  results[i,1] <- media_post
+  results[i,2] <- var_post
+  results[i,3] <- IC95[1]
+  results[i,4] <- IC95[2]
+  
+  # Tabla de tallas por mes
+  tab <- table(TRAMPAS_MARMOLA_2022$ANCHO_MM[
+    TRAMPAS_MARMOLA_2022$MES == i &
+      TRAMPAS_MARMOLA_2022$SEXO == 2 &
+      TRAMPAS_MARMOLA_2022$PUERTO_RECALADA == 947 &
+      TRAMPAS_MARMOLA_2022$ARTE == 1
+  ])
+  
+  # Si el mes no tiene datos, pasa al siguiente
+  if(length(tab) == 0) next
+  
+  talla  <- as.numeric(names(tab))   # t_j
+  counts <- as.numeric(tab)          # n_j
+  K <- length(talla)
+  
+  # Modelo: Dirichlet sobre pesos de tallas
+  model_string <- "
+  model{
+    w[1:K] ~ ddirch(alpha[1:K])
+    theta <- inprod(w[1:K], talla[1:K])   # media de talla (estimador)
+  }
+  "
+  
+  j <- jags.model(textConnection(model_string),
+                  data = list(K=K, talla=talla, alpha=1 + counts),
+                  n.chains = 2, quiet=TRUE)
+  update(j, 1000)
+  
+  samp <- coda.samples(j, "theta", n.iter = 3000)
+  th <- as.numeric(as.matrix(samp))
+  
+  # Resumen posterior
+  media_post <- mean(th)
+  IC95 <- quantile(th, c(0.025, 0.975))
+  var_post <- var(th)
+  
+  # Guardar en la matriz
+  results[i,5] <- media_post
+  results[i,6] <- var_post
+  results[i,7] <- IC95[1]
+  results[i,8] <- IC95[2]
+}
+round(results,4)
+
+res_macho <- data.frame(
+  MES     = 1:12,
+  Media   = results[, "Media_macho"],
+  IC_2.5  = results[, "IC_2.5_macho"],
+  IC_97.5 = results[, "IC_97.5_macho"],
+  Var     = results[, "Var_macho"],
+  SEXO    = "Macho"
+)
+
+res_hembra <- data.frame(
+  MES     = 1:12,
+  Media   = results[, "Media_hembra"],
+  IC_2.5  = results[, "IC_2.5_hembra"],
+  IC_97.5 = results[, "IC_97.5_hembra"],
+  Var     = results[, "Var_hembra"],
+  SEXO    = "Hembra"
+)
+
+## --- Plot 1: Macho ---
+ggplot(res_macho, aes(x = MES, y = Media)) +
+  geom_ribbon(aes(ymin = IC_2.5, ymax = IC_97.5), fill = "skyblue", alpha = 0.25, na.rm = TRUE) +
+  geom_line(color = "blue", linewidth = 1, na.rm = TRUE) +
+  geom_point(color = "blue", size = 2, na.rm = TRUE) +
+  scale_x_continuous(breaks = 1:12) +
+  labs(
+    x = "Mes", y = "Talla media (mm)",
+    title = "Serie de tiempo: talla media bayesiana (IC 95%)",
+    subtitle = "SEXO: Macho • Puerto Ancud • Buceo"
+  ) +
+  theme_minimal(base_size = 12)
+
+## --- Plot 2: Hembra ---
+ggplot(res_hembra, aes(x = MES, y = Media)) +
+  geom_ribbon(aes(ymin = IC_2.5, ymax = IC_97.5), fill = "plum", alpha = 0.25, na.rm = TRUE) +
+  geom_line(color = "red", linewidth = 1, na.rm = TRUE) +
+  geom_point(color = "red", size = 2, na.rm = TRUE) +
+  scale_x_continuous(breaks = 1:12) +
+  labs(
+    x = "Mes", y = "Talla media (mm)",
+    title = "Serie de tiempo: talla media bayesiana (IC 95%)",
+    subtitle = "SEXO: Hembra • Puerto Ancud • Buceo"
+  ) +
+  theme_minimal(base_size = 12)
+
+#### DALCAHUE TRAMPA ----
+
+set.seed(123)
+results <- matrix(NA_real_, nrow = 12, ncol = 8)
+colnames(results) <- c("Media_macho", "Var_macho", "IC_2.5_macho", "IC_97.5_macho",
+                       "Media_hembra", "Var_hembra", "IC_2.5_hembra", "IC_97.5_hembra")
+
+for(i in 1:12) {
+  
+  # Tabla de tallas por mes
+  tab <- table(TRAMPAS_MARMOLA_2022$ANCHO_MM[
+    TRAMPAS_MARMOLA_2022$MES == i &
+      TRAMPAS_MARMOLA_2022$SEXO == 1 &
+      TRAMPAS_MARMOLA_2022$PUERTO_RECALADA == 950 &
+      TRAMPAS_MARMOLA_2022$ARTE == 2
+  ])
+  
+  # Si el mes no tiene datos, pasa al siguiente
+  if(length(tab) == 0) next
+  
+  talla  <- as.numeric(names(tab))   # t_j
+  counts <- as.numeric(tab)          # n_j
+  K <- length(talla)
+  
+  # Modelo: Dirichlet sobre pesos de tallas
+  model_string <- "
+  model{
+    w[1:K] ~ ddirch(alpha[1:K])
+    theta <- inprod(w[1:K], talla[1:K])   # media de talla (estimador)
+  }
+  "
+  
+  j <- jags.model(textConnection(model_string),
+                  data = list(K=K, talla=talla, alpha=1 + counts),
+                  n.chains = 2, quiet=TRUE)
+  update(j, 1000)
+  
+  samp <- coda.samples(j, "theta", n.iter = 3000)
+  th <- as.numeric(as.matrix(samp))
+  
+  # Resumen posterior
+  media_post <- mean(th)
+  IC95 <- quantile(th, c(0.025, 0.975))
+  var_post <- var(th)
+  
+  # Guardar en la matriz
+  results[i,1] <- media_post
+  results[i,2] <- var_post
+  results[i,3] <- IC95[1]
+  results[i,4] <- IC95[2]
+  
+  # Tabla de tallas por mes
+  tab <- table(TRAMPAS_MARMOLA_2022$ANCHO_MM[
+    TRAMPAS_MARMOLA_2022$MES == i &
+      TRAMPAS_MARMOLA_2022$SEXO == 2 &
+      TRAMPAS_MARMOLA_2022$PUERTO_RECALADA == 950 &
+      TRAMPAS_MARMOLA_2022$ARTE == 2
+  ])
+  
+  # Si el mes no tiene datos, pasa al siguiente
+  if(length(tab) == 0) next
+  
+  talla  <- as.numeric(names(tab))   # t_j
+  counts <- as.numeric(tab)          # n_j
+  K <- length(talla)
+  
+  # Modelo: Dirichlet sobre pesos de tallas
+  model_string <- "
+  model{
+    w[1:K] ~ ddirch(alpha[1:K])
+    theta <- inprod(w[1:K], talla[1:K])   # media de talla (estimador)
+  }
+  "
+  
+  j <- jags.model(textConnection(model_string),
+                  data = list(K=K, talla=talla, alpha=1 + counts),
+                  n.chains = 2, quiet=TRUE)
+  update(j, 1000)
+  
+  samp <- coda.samples(j, "theta", n.iter = 3000)
+  th <- as.numeric(as.matrix(samp))
+  
+  # Resumen posterior
+  media_post <- mean(th)
+  IC95 <- quantile(th, c(0.025, 0.975))
+  var_post <- var(th)
+  
+  # Guardar en la matriz
+  results[i,5] <- media_post
+  results[i,6] <- var_post
+  results[i,7] <- IC95[1]
+  results[i,8] <- IC95[2]
+}
+round(results,4)
+
+res_macho <- data.frame(
+  MES     = 1:12,
+  Media   = results[, "Media_macho"],
+  IC_2.5  = results[, "IC_2.5_macho"],
+  IC_97.5 = results[, "IC_97.5_macho"],
+  Var     = results[, "Var_macho"],
+  SEXO    = "Macho"
+)
+
+res_hembra <- data.frame(
+  MES     = 1:12,
+  Media   = results[, "Media_hembra"],
+  IC_2.5  = results[, "IC_2.5_hembra"],
+  IC_97.5 = results[, "IC_97.5_hembra"],
+  Var     = results[, "Var_hembra"],
+  SEXO    = "Hembra"
+)
+
+## --- Plot 1: Macho ---
+ggplot(res_macho, aes(x = MES, y = Media)) +
+  geom_ribbon(aes(ymin = IC_2.5, ymax = IC_97.5), fill = "skyblue", alpha = 0.25, na.rm = TRUE) +
+  geom_line(color = "blue", linewidth = 1, na.rm = TRUE) +
+  geom_point(color = "blue", size = 2, na.rm = TRUE) +
+  scale_x_continuous(breaks = 1:12) +
+  labs(
+    x = "Mes", y = "Talla media (mm)",
+    title = "Serie de tiempo: talla media bayesiana (IC 95%)",
+    subtitle = "SEXO: Macho • Puerto Dalcahue • Trampa"
+  ) +
+  theme_minimal(base_size = 12)
+
+## --- Plot 2: Hembra ---
+ggplot(res_hembra, aes(x = MES, y = Media)) +
+  geom_ribbon(aes(ymin = IC_2.5, ymax = IC_97.5), fill = "plum", alpha = 0.25, na.rm = TRUE) +
+  geom_line(color = "red", linewidth = 1, na.rm = TRUE) +
+  geom_point(color = "red", size = 2, na.rm = TRUE) +
+  scale_x_continuous(breaks = 1:12) +
+  labs(
+    x = "Mes", y = "Talla media (mm)",
+    title = "Serie de tiempo: talla media bayesiana (IC 95%)",
+    subtitle = "SEXO: Hembra • Puerto Dalcahue • Hembra"
+  ) +
+  theme_minimal(base_size = 12)
+
+#### CURANUÉ TRAMPA ----
+
+set.seed(123)
+results <- matrix(NA_real_, nrow = 12, ncol = 8)
+colnames(results) <- c("Media_macho", "Var_macho", "IC_2.5_macho", "IC_97.5_macho",
+                       "Media_hembra", "Var_hembra", "IC_2.5_hembra", "IC_97.5_hembra")
+
+for(i in 1:12) {
+  
+  # Tabla de tallas por mes
+  tab <- table(TRAMPAS_MARMOLA_2022$ANCHO_MM[
+    TRAMPAS_MARMOLA_2022$MES == i &
+      TRAMPAS_MARMOLA_2022$SEXO == 1 &
+      TRAMPAS_MARMOLA_2022$PUERTO_RECALADA == 65 &
+      TRAMPAS_MARMOLA_2022$ARTE == 2
+  ])
+  
+  # Si el mes no tiene datos, pasa al siguiente
+  if(length(tab) == 0) next
+  
+  talla  <- as.numeric(names(tab))   # t_j
+  counts <- as.numeric(tab)          # n_j
+  K <- length(talla)
+  
+  # Modelo: Dirichlet sobre pesos de tallas
+  model_string <- "
+  model{
+    w[1:K] ~ ddirch(alpha[1:K])
+    theta <- inprod(w[1:K], talla[1:K])   # media de talla (estimador)
+  }
+  "
+  
+  j <- jags.model(textConnection(model_string),
+                  data = list(K=K, talla=talla, alpha=1 + counts),
+                  n.chains = 2, quiet=TRUE)
+  update(j, 1000)
+  
+  samp <- coda.samples(j, "theta", n.iter = 3000)
+  th <- as.numeric(as.matrix(samp))
+  
+  # Resumen posterior
+  media_post <- mean(th)
+  IC95 <- quantile(th, c(0.025, 0.975))
+  var_post <- var(th)
+  
+  # Guardar en la matriz
+  results[i,1] <- media_post
+  results[i,2] <- var_post
+  results[i,3] <- IC95[1]
+  results[i,4] <- IC95[2]
+  
+  # Tabla de tallas por mes
+  tab <- table(TRAMPAS_MARMOLA_2022$ANCHO_MM[
+    TRAMPAS_MARMOLA_2022$MES == i &
+      TRAMPAS_MARMOLA_2022$SEXO == 2 &
+      TRAMPAS_MARMOLA_2022$PUERTO_RECALADA == 65 &
+      TRAMPAS_MARMOLA_2022$ARTE == 2
+  ])
+  
+  # Si el mes no tiene datos, pasa al siguiente
+  if(length(tab) == 0) next
+  
+  talla  <- as.numeric(names(tab))   # t_j
+  counts <- as.numeric(tab)          # n_j
+  K <- length(talla)
+  
+  # Modelo: Dirichlet sobre pesos de tallas
+  model_string <- "
+  model{
+    w[1:K] ~ ddirch(alpha[1:K])
+    theta <- inprod(w[1:K], talla[1:K])   # media de talla (estimador)
+  }
+  "
+  
+  j <- jags.model(textConnection(model_string),
+                  data = list(K=K, talla=talla, alpha=1 + counts),
+                  n.chains = 2, quiet=TRUE)
+  update(j, 1000)
+  
+  samp <- coda.samples(j, "theta", n.iter = 3000)
+  th <- as.numeric(as.matrix(samp))
+  
+  # Resumen posterior
+  media_post <- mean(th)
+  IC95 <- quantile(th, c(0.025, 0.975))
+  var_post <- var(th)
+  
+  # Guardar en la matriz
+  results[i,5] <- media_post
+  results[i,6] <- var_post
+  results[i,7] <- IC95[1]
+  results[i,8] <- IC95[2]
+}
+round(results,4)
+
+res_macho <- data.frame(
+  MES     = 1:12,
+  Media   = results[, "Media_macho"],
+  IC_2.5  = results[, "IC_2.5_macho"],
+  IC_97.5 = results[, "IC_97.5_macho"],
+  Var     = results[, "Var_macho"],
+  SEXO    = "Macho"
+)
+
+res_hembra <- data.frame(
+  MES     = 1:12,
+  Media   = results[, "Media_hembra"],
+  IC_2.5  = results[, "IC_2.5_hembra"],
+  IC_97.5 = results[, "IC_97.5_hembra"],
+  Var     = results[, "Var_hembra"],
+  SEXO    = "Hembra"
+)
+
+## --- Plot 1: Macho ---
+ggplot(res_macho, aes(x = MES, y = Media)) +
+  geom_ribbon(aes(ymin = IC_2.5, ymax = IC_97.5), fill = "skyblue", alpha = 0.25, na.rm = TRUE) +
+  geom_line(color = "blue", linewidth = 1, na.rm = TRUE) +
+  geom_point(color = "blue", size = 2, na.rm = TRUE) +
+  scale_x_continuous(breaks = 1:12) +
+  labs(
+    x = "Mes", y = "Talla media (mm)",
+    title = "Serie de tiempo: talla media bayesiana (IC 95%)",
+    subtitle = "SEXO: Macho • Puerto Curanué • Trampa"
+  ) +
+  theme_minimal(base_size = 12)
+
+## --- Plot 2: Hembra ---
+ggplot(res_hembra, aes(x = MES, y = Media)) +
+  geom_ribbon(aes(ymin = IC_2.5, ymax = IC_97.5), fill = "plum", alpha = 0.25, na.rm = TRUE) +
+  geom_line(color = "red", linewidth = 1, na.rm = TRUE) +
+  geom_point(color = "red", size = 2, na.rm = TRUE) +
+  scale_x_continuous(breaks = 1:12) +
+  labs(
+    x = "Mes", y = "Talla media (mm)",
+    title = "Serie de tiempo: talla media bayesiana (IC 95%)",
+    subtitle = "SEXO: Hembra • Puerto Curanué • Hembra"
+  ) +
+  theme_minimal(base_size = 12)
+
+
+########### INTERPOLACIÓN SPLINE CÚBICA
+
+
+
+#### PARA GRAFICAR ----
+
+mes = 1:12
+
+hm <- c(NA, 130.6829, 128.2857, NA, 125.7679, 126.1970, 121.2083, 
+        123.7250, 124.9026, 127.8723, 129.2273, 123.5810)
+
+hh <- c(NA, 121.5000, 114.9744, NA, 115.7857, 117.0000, 117.0833, 
+        116.3438, 115.9683, 120.5309, 119.9254, 117.4921)
+
+hm_interp = na.spline(hm)
+hh_interp = na.spline(hh)
+
+datos <- data.frame(
+  mes = rep(mes, 2),
+  valor = c(hm_interp, hh_interp),
+  sexo = factor(rep(c("Macho", "Hembra"), each = 12))  # Asumiendo hm = Macho, hh = Hembra; ajusta si es necesario
+)
+
+# Crear el gráfico similar al estilo de referencia: líneas en lugar de ridges, facetado por sexo
+ggplot(datos, aes(x = mes, y = valor, color = sexo)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +  # Opcional: agregar puntos para los valores originales interpolados
+  facet_wrap(~ sexo, nrow = 1, scales = "free_y") +  # Ajusta scales si quieres ejes independientes
+  scale_color_brewer(palette = "Blues", guide = "none") +  # Adaptado de fill a color
+  labs(
+    x = "Mes",
+    y = "Valor (mm)",  # Asumiendo que es ancho o similar
+    title = "Valores interpolados por mes y sexo"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text.y = element_text(size = 10),
+    strip.text = element_text(face = "bold", size = 13)
+  )
+
+#### ANCUD TRAMPA IFOP ----
+
+macho <- c(127.9230, 131.5230, 125.5668, 128.0454, 125.4415, 122.1196, 
+           121.6705, 127.7108, 126.0413, 126.3308, 123.1610, 124.8913)
+hembra <- c(121.3949, 122.5193, 120.9845, 122.4056, 121.3028, 119.3390, 
+            117.8762, 121.3623, 118.8868, 116.5238, 119.4118, 116.7838)
+na.spline(macho)
+na.spline(hembra)
+
+#### ANCUD TRAMPA BAYES MACHO ----
+
+macho <- c(128.5628, 132.8590, 126.8656, 128.1762, 126.6488, 123.4562,
+           122.6448, 128.9807, 127.0355, 127.3054, 124.0118, 125.9531)
+na.spline(macho)
+
+#### ANCUD TRAMPA BAYES HEMBRA ----
+
+hembra <- c(122.0559, 123.8139, 121.5834, 122.8705, 121.8070, 120.5350,
+            118.6803, 122.1035, 119.9636, 117.0371, 120.4001, 117.6757)
+na.spline(hembra)
+
+#### ANCUD BUCEO IFOP ----
+
+macho <- c(NA, 140.0288, 137.7246, 140.2716, 145.7073, NA,
+           147.6910, 146.7305, 136.0613, 145.4950, 119.3251, 120.6800)
+na.spline(macho)
+
+#### ANCUD BUCEO BAYES MACHO ----
+
+macho <- c(NA, 140.0209, 139.1113, 141.5269, 145.5472, NA,
+           147.7674, 147.1700, 137.4443, 146.3005, 119.5244, 121.2897)
+na.spline(macho)
+
+#### DALCAHUE TRAMPA IFOP ----
+
+macho <- c(NA, 130.6829, 128.2857, NA, 125.7679, 126.1970, 121.2083,
+           123.7250, 124.9026, 127.8723, 129.2273, 123.5810)
+hembra <- c(NA, 121.5000, 114.9744, NA, 115.7857, 117.0000, 117.0833,
+            116.3438, 115.9683, 120.5309, 119.9254, 117.4921)
+na.spline(macho)
+na.spline(hembra)
+
+#### DALCAHUE TRAMPA BAYES MACHO ----
+
+macho <- c(NA, 131.9010, 128.4838, NA, 126.8968, 127.1601, 122.1353,
+           125.4655, 126.0223, 129.1037, 130.6347, 124.3054)
+na.spline(macho)
+
+#### DALCAHUE TRAMPA BAYES HEMBRA ----
+
+hembra <- c(NA, 122.3111, 115.2665, NA, 116.3800, 116.9761, 117.3145,
+            116.8301, 116.2822, 121.5473, 120.3619, 118.0350)
+na.spline(hembra)
+
+#### CURANUÉ TRAMPA IFOP ----
+
+macho <- c(NA, 134.2353, 133.4651, 132.1731, NA, NA, NA, NA, 135.4419, NA, NA, NA)
+hembra <- c(NA, 122.6154, 121.3250, 128.0000, NA, NA, NA, NA, 124.0000, NA, NA, NA)
+na.spline(macho)
+na.spline(hembra)
+
+#### CURANUÉ TRAMPA BAYES MACHO ----
+
+macho <- c(NA, 134.9364, 134.0935, 132.9874, NA, NA, NA, NA, 136.9938, NA, NA, NA)
+na.spline(macho)
+
+#### CURANUÉ TRAMPA BAYES HEMBRA ----
+
+hembra <- c(NA, 122.8088, 121.6733, 127.4946, NA, NA, NA, NA, 124.8443, NA, NA, NA)
+na.spline(hembra)
+
+
+# Base de datos -------------------------------------------------------------------------------
+
+DATA <- read_excel("BD_RDD2_2022.xlsx")
+DATA <- head(DATA, -1)
+
+LagosT <- DATA %>% filter(REGION == "10", COD_ESPECIE %in% c("66", "550"),ARTE == "2",
+                          !is.na(N),
+                          N != "",
+                          N > 0)
+
+BuceoAncud <- DATA %>% filter(REGION == "10", PUERTO_RECALADA == "947", COD_ESPECIE %in% c("66", "550"),
+                              ARTE == "1")
+
+TrampasAncud <- DATA %>% filter(REGION == "10", PUERTO_RECALADA == "947", COD_ESPECIE %in% c("66", "550"),
+                                ARTE == "2")
+
+TrampasDalcahue <- DATA %>% filter(REGION == "10", PUERTO_RECALADA == "950", COD_ESPECIE %in% c("66", "550"),
+                                   ARTE == "2")
+
+TrampasCuranue <- DATA %>% filter(REGION == "10", PUERTO_RECALADA == "65", COD_ESPECIE %in% c("66", "550"),
+                                  ARTE == "2")
+
+
+# Funciones -----------------------------------------------------------------------------------
+
+RenBuc <- function(DATA){
+  n <- nrow(DATA)
+  d <- DATA$DESEMBARQUE
+  e <- DATA$HORAS
+  
+  U <- sum(d)/sum(e)
+  V <- (1/(n*(mean(e)^{2})))*(sum((d-U*e)^{2}))/(n-1)
+  
+  cat("El rendimiento estimado es:", U," kg jaiba/hora buceo\n")
+  cat("La variabilidad estimada del rendimiento estimado es:", V)
+}
+
+RenTram <- function(DATA){
+  n <- nrow(DATA)
+  d <- DATA$DESEMBARQUE
+  e <- DATA$N
+  
+  U <- sum(d)/sum(e)
+  V <- (1/(n*(mean(e)^{2})))*(sum((d-U*e)^{2}))/(n-1)
+  
+  cat("El rendimiento estimado es:", U," kg jaiba/trampa\n")
+  cat("La variabilidad estimada del rendimiento estimado es:", V)
+}
+
+BootStrap <- function(d,e,B){
+  n <- length(d)
+  resultados <- numeric(B)
+  for (b in 1:B) {
+    i <- sample(1:n,n,replace = T)
+    d_boot <- d[i]
+    e_boot <- e[i]
+    resultados[b] <- sum(d_boot)/sum(e_boot)
+  }
+  return(resultados)
+}
+
+RenReg <- function(data) {
+  # Asegurar que las variables existan
+  if(!all(c("DESEMBARQUE", "N") %in% names(data))) {
+    stop("El data frame debe contener las columnas 'DESEMBARQUE' y 'N'")
+  }
+  
+  # Ajuste del modelo lineal
+  m1 <- lm(DESEMBARQUE ~ N, data = data)
+  
+  # Extraer parámetros
+  b0 <- coef(m1)[1]
+  b1 <- coef(m1)[2]
+  
+  # Número de observaciones
+  n <- nrow(data)
+  
+  # Estimación de sigma^2
+  sigma2est <- sum(resid(m1)^2) / (n - 2)
+  
+  # Estadísticos de la variable N
+  xmedia <- mean(data$N)
+  sxx <- sum((data$N - xmedia)^2)
+  z <- n / sum(data$N)
+  
+  # Varianzas y covarianza de los estimadores
+  varb0 <- sigma2est * (1/n + (xmedia^2 / sxx))
+  varb1 <- sigma2est / sxx
+  covb0b1 <- -sigma2est * xmedia / sxx
+  
+  # Estimador de rendimiento U y su varianza
+  U <- b1 + z * b0
+  varU <- sigma2est * ((1 - z * xmedia)^2 / sxx + (z^2) / n)
+  
+  # Salida
+  cat("========================================\n")
+  cat("   ESTIMADOR DE REGRESIÓN (Cochran)\n")
+  cat("========================================\n\n")
+  cat("Coeficientes estimados:\n")
+  cat(sprintf("  b0 (Intercepto): %.6f\n", b0))
+  cat(sprintf("  b1 (Pendiente):  %.6f\n\n", b1))
+  
+  cat("Varianzas y covarianza:\n")
+  cat(sprintf("  Var(b0): %.6f\n", varb0))
+  cat(sprintf("  Var(b1): %.6f\n", varb1))
+  cat(sprintf("  Cov(b0, b1): %.6f\n\n", covb0b1))
+  
+  cat("Estimación del rendimiento:\n")
+  cat(sprintf("  U estimado (kg jaiba/trampa): %.6f\n", U))
+  cat(sprintf("  Var(U estimado): %.6f\n\n", varU))
+  
+  cat("========================================\n")
+  
+  # Retornar invisiblemente una lista con todos los resultados
+  invisible(list(
+    modelo = m1,
+    b0 = b0,
+    b1 = b1,
+    varb0 = varb0,
+    varb1 = varb1,
+    covb0b1 = covb0b1,
+    U = U,
+    varU = varU,
+    sigma2 = sigma2est,
+    z = z
+  ))
+}
+
+RenSchaefer <- function(data, N_var, Y_var, alpha = 0.05, plot = TRUE) {
+  # data  : data.frame con los datos
+  # N_var : nombre (string) de la variable esfuerzo (ej. "N")
+  # Y_var : nombre (string) de la variable desembarque (ej. "DESEMBARQUE")
+  # alpha : nivel para IC (por defecto 0.05 => IC 95%)
+  # plot  : si TRUE dibuja la nube y la curva ajustada
+  
+  # Extraer
+  E <- data[[N_var]]
+  Y <- data[[Y_var]]
+  
+  if (any(E == 0)) stop("Hay valores de esfuerzo (N) iguales a 0. El modelo no puede ajustarse.")
+  n <- length(E)
+  
+  # Starts sencillos: Uf = Y/E = a - b E
+  Uf <- Y / E
+  lm_R <- lm(Uf ~ E)
+  a_start <- coef(lm_R)[1]
+  b_start <- -coef(lm_R)[2]
+  
+  # Ajuste nls con control
+  # uso try() por si falla la convergencia, devolver error claro
+  fit_try <- try(nls(Y ~ a * E - b * E^2,
+                     start = list(a = a_start, b = b_start),
+                     control = nls.control(maxiter = 1000, warnOnly = TRUE)),
+                 silent = TRUE)
+  if (inherits(fit_try, "try-error")) stop("El ajuste nls falló. Intenta otros valores iniciales o nlsLM.")
+  modelo <- fit_try
+  
+  # Coeficientes
+  coefs <- coef(modelo)
+  a <- as.numeric(coefs["a"])
+  b <- as.numeric(coefs["b"])
+  
+  # Rendimiento estimado (total tipo RenTram)
+  Y_est <- a * E - b * E^2
+  R_total <- sum(Y_est) / sum(E)
+  
+  # Varianza del estimador por delta method usando vcov()
+  V <- vcov(modelo)       # 2x2
+  # derivadas
+  dR_da <- 1
+  dR_db <- - sum(E^2) / sum(E)
+  var_R <- as.numeric(dR_da^2 * V["a","a"] +
+                        dR_db^2 * V["b","b"] +
+                        2 * dR_da * dR_db * V["a","b"])
+  sd_R <- sqrt(var_R)
+  
+  # IC analítico (t con df = n - p)
+  p <- length(coefs)      # 2
+  df <- n - p
+  tcrit <- qt(1 - alpha/2, df = df)
+  CI_analitico <- R_total + c(-1,1) * tcrit * sd_R
+  
+  # Plot opcional
+  if (plot) {
+    plot(E, Y,
+         xlab = "Esfuerzo (N trampas)",
+         ylab = "Desembarque (kg)",
+         main = "Curva de rendimiento tipo Schaefer")
+    E_seq <- seq(min(E), max(E), length.out = 200)
+    Y_pred <- a * E_seq - b * E_seq^2
+    lines(E_seq, Y_pred, col = "blue", lwd = 2)
+  }
+  
+  # Resumen por consola
+  cat("\n--- RESUMEN DEL MODELO DE SCHAEFER ---\n")
+  cat(sprintf("Parámetro a (tasa inicial): %.6f\n", a))
+  cat(sprintf("Parámetro b (curvatura):   %.6f\n", b))
+  cat(sprintf("Rendimiento estimado R_hat: %.6f (kg por unidad de esfuerzo)\n", R_total))
+  cat(sprintf("Varianza estimada de R_hat: %.8f\n", var_R))
+  cat(sprintf("Desviación estándar (sd):   %.6f\n", sd_R))
+  cat(sprintf("IC analítico %.1f%% = [%.6f, %.6f] (t, df=%d)\n",
+              100*(1-alpha), CI_analitico[1], CI_analitico[2], df))
+  cat("----------------------------------------\n")
+  cat("Interpretación breve:\n")
+  cat(" - 'a' es el rendimiento por unidad de esfuerzo cuando E es muy pequeño.\n")
+  cat(" - 'b' mide la caída del rendimiento al aumentar el esfuerzo (mayor b -> más saturación).\n")
+  cat(" - La varianza indicada es la estimación (delta method) de la varianza de R_hat.\n\n")
+  
+  # Devolver lista con todo
+  invisible(list(
+    model_summary = summary(modelo),
+    coeficientes = coefs,
+    R_hat = R_total,
+    var_R = var_R,
+    sd_R = sd_R,
+    CI = CI_analitico,
+    df = df,
+    vcov = V
+  ))
+}
+
+# Desembarque y esfuerzo ----------------------------------------------------------------------
+
+## Buceo Ancud ----
+
+sum(BuceoAncud$DESEMBARQUE)
+sum(BuceoAncud$HORAS)
+
+tabla <- BuceoAncud %>% group_by(MES_ARRIBO) %>% summarise(total_desembarque = sum(DESEMBARQUE, na.rm = TRUE))
+tabla2 <- BuceoAncud %>% group_by(MES_ARRIBO) %>% summarise(total_horas = sum(HORAS, na.rm = TRUE))
+
+sum(tabla2$total_horas)
+
+round(tabla$total_desembarque/1000,3)
+sum(round(tabla2$total_horas,0))
+
+sum(tabla2$total_horas)
+
+round((tabla$total_desembarque/tabla2$total_horas),1)
+sum(round((tabla$total_desembarque/tabla2$total_horas),1))
+
+RenBuc(BuceoAncud)
+
+hist(BA)
+
+BA <- BootStrap(BuceoAncud$DESEMBARQUE,BuceoAncud$HORAS,5000)
+mean(BA)
+var(BA)
+
+### Serie de Tiempo ----
+
+datos <- merge(tabla, tabla2, by = "MES_ARRIBO")
+
+datos$total_desembarque <- round(datos$total_desembarque/1000,3)
+
+ggplot(datos, aes(x = factor(MES_ARRIBO))) +
+  # Barras para Desembarque
+  geom_bar(aes(y = total_desembarque, fill = "Desembarque (t)"), 
+           stat = "identity", width = 0.7) +
+  # Línea para Esfuerzo (reescala correctamente)
+  geom_line(aes(y = total_horas * max(total_desembarque) / max(total_horas), 
+                color = "Esfuerzo de pesca"), 
+            linewidth = 1.2, group = 1) +
+  # Ejes y escalas
+  scale_y_continuous(
+    name = "Desembarque (t)",
+    breaks = seq(0, max(datos$total_desembarque) + 0.25, by = 0.25),
+    expand = expansion(mult = c(0, 0.05)),
+    sec.axis = sec_axis(
+      trans = ~ . * max(datos$total_horas) / max(datos$total_desembarque),
+      name = "Esfuerzo (Horas de buceo)",
+      breaks = seq(0, max(datos$total_horas) + 15, by = 15)
+    )
+  ) +
+  # Etiquetas del eje X
+  scale_x_discrete(
+    name = "Mes de arribo",
+    labels = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+  ) +
+  # Colores
+  scale_fill_manual(values = c("Desembarque (t)" = "steelblue")) +
+  scale_color_manual(values = c("Esfuerzo de pesca" = "brown")) +
+  # Tema y formato
+  theme_classic() +
+  theme(
+    axis.title.y.left = element_text(size = 11, margin = margin(r = 10)),
+    axis.title.y.right = element_text(size = 11, margin = margin(l = 10)),
+    axis.text.x = element_text(angle = 0, hjust = 0.5),
+    axis.title.x = element_text(vjust = -2.5), # ↓ Mueve el título del eje X hacia abajo
+    legend.title = element_blank(),
+    legend.position = "bottom",
+    legend.text = element_text(size = 10)
+  )
+
+ggplot(datos, aes(x = factor(MES_ARRIBO), 
+                  y = total_desembarque / total_horas, 
+                  group = 1)) +
+  geom_line(color = "limegreen", linewidth = 1.2) +
+  geom_point(color = "darkgreen", size = 3) +
+  scale_x_discrete(
+    name = "Mes de arribo",
+    labels = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+  ) +
+  scale_y_continuous(
+    name = "Rendimiento (Kg jaiba/Hora de buceo)",
+    limits = c(0, NA),
+    breaks = seq(0, max(datos$total_desembarque / datos$total_horas, na.rm = TRUE) + 10, by = 10),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  theme_minimal() +
+  theme(
+    axis.title.x = element_text(vjust = 0, margin = margin(t = 10)),
+    axis.title.y = element_text(size = 11, margin = margin(r = 10)),
+    axis.text.x  = element_text(angle = 0, hjust = 0.5, margin = margin(t = 6))
+  )
+
+
+## TrampasAncud ----
+
+cor(TrampasAncud$DESEMBARQUE,TrampasAncud$N)
+
+sum(TrampasAncud$DESEMBARQUE)
+sum(TrampasAncud$N)
+
+tabla3 <- TrampasAncud %>% group_by(MES_ARRIBO) %>% summarise(total_desembarque = sum(DESEMBARQUE, na.rm = TRUE))
+tabla4 <- TrampasAncud %>% group_by(MES_ARRIBO) %>% summarise(total_trampas = sum(N, na.rm = TRUE))
+
+round(tabla3$total_desembarque/1000,3)
+mean(tabla4$total_trampas)
+
+tabla4
+
+sum(tabla4$total_trampas)
+
+round((tabla3$total_desembarque/tabla4$total_trampas),2)
+
+sum(round((tabla3$total_desembarque/tabla4$total_trampas),2))
+
+sum(tabla3$total_desembarque)/sum(tabla4$total_trampas)
+
+RenTram(TrampasAncud)
+
+plot(TrampasAncud$N, TrampasAncud$DESEMBARQUE,
+     xlab = "Esfuerzo (trampas)",
+     ylab = "Desembarque (kg jaiba)",
+     pch = 19, col = "darkblue")
+abline(lm(DESEMBARQUE ~ N, data = TrampasAncud), col = "red", lwd = 2)
+
+m1 <- lm(DESEMBARQUE ~ N, data = TrampasAncud)
+summary(m1)
+
+hist(m1$residuals,breaks = 50)
+
+ad.test(m1$residuals)
+lillie.test(m1$residuals)
+
+plot(m1$residuals)
+bptest(m1)
+
+n <- nrow(TrampasAncud) ; n
+
+b0 <- coef(m1)[1] ; b0
+b1 <- coef(m1)[2] ; b1
+
+yest <- fitted(m1) 
+sigma2est <- (sum(resid(m1)^{2}))/(n-2) ; sigma2est
+
+xmedia <- mean(TrampasAncud$N) ; xmedia
+sxx <- sum((TrampasAncud$N-xmedia)^{2}) ; sxx
+
+z <- n/sum(TrampasAncud$N) ; z
+
+varb0 <- sigma2est*(1/n + xmedia^{2}/sxx) ; varb0
+
+varb1 <- sigma2est/sxx ; varb1
+
+covb0b1 <- -sigma2est*xmedia/sxx ; covb0b1
+
+U <- b1+z*b0 ; U
+
+varU <- sigma2est*((1-z*xmedia)^{2}/sxx+(z^{2})/n) ; varU 
+
+RenReg(TrampasAncud)
+
+Uf <- TrampasAncud$DESEMBARQUE/TrampasAncud$N
+
+hist(Uf,breaks = 50,probability = T)
+lines(density(Uf), col = "red", lwd = 2)
+
+ad.test(Uf)
+lillie.test(Uf)
+
+seU <- sqrt(varU)
+zcrit <- qnorm(1 - 0.05/2)
+
+ic <- U + c(-1, 1) * zcrit * seU
+
+boxplot(TrampasAncud$DESEMBARQUE ~ TrampasAncud$MES_ARRIBO)
+boxplot(TrampasAncud$N ~ TrampasAncud$MES_ARRIBO)
+
+### Serie de Tiempo ----
+
+datos2 <- merge(tabla3, tabla4, by = "MES_ARRIBO")
+
+datos2$total_desembarque <- round(datos2$total_desembarque/1000,3)
+
+ggplot(datos2, aes(x = factor(MES_ARRIBO))) +
+  # Barras para Desembarque
+  geom_bar(aes(y = total_desembarque, fill = "Desembarque (t)"), 
+           stat = "identity", width = 0.7) +
+  # Línea para Esfuerzo (reescala correctamente)
+  geom_line(aes(y = total_trampas * max(total_desembarque) / max(total_trampas), 
+                color = "Esfuerzo de pesca"), 
+            linewidth = 1.2, group = 1) +
+  # Ejes y escalas
+  scale_y_continuous(
+    name = "Desembarque (t)",
+    breaks = seq(0, max(datos2$total_desembarque) + 5, by = 5),
+    expand = expansion(mult = c(0, 0.05)),
+    sec.axis = sec_axis(
+      trans = ~ . * max(datos2$total_trampas) / max(datos2$total_desembarque),
+      name = "Esfuerzo (Cantidad de trampas)",
+      breaks = seq(0, max(datos2$total_trampas) + 500, by = 500)
+    )
+  ) +
+  # Etiquetas del eje X
+  scale_x_discrete(
+    name = "Mes de arribo",
+    labels = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+  ) +
+  # Colores
+  scale_fill_manual(values = c("Desembarque (t)" = "steelblue")) +
+  scale_color_manual(values = c("Esfuerzo de pesca" = "brown")) +
+  # Tema y formato
+  theme_classic() +
+  theme(
+    axis.title.y.left = element_text(size = 11, margin = margin(r = 10)),
+    axis.title.y.right = element_text(size = 11, margin = margin(l = 10)),
+    axis.text.x = element_text(angle = 0, hjust = 0.5),
+    axis.title.x = element_text(vjust = -2.5), # ↓ Mueve el título del eje X hacia abajo
+    legend.title = element_blank(),
+    legend.position = "bottom",
+    legend.text = element_text(size = 10)
+  )
+
+ggplot(datos2, aes(x = factor(MES_ARRIBO), 
+                   y = total_desembarque / total_trampas, 
+                   group = 1)) +
+  geom_line(color = "limegreen", linewidth = 1.2) +
+  geom_point(color = "darkgreen", size = 3) +
+  scale_x_discrete(
+    name = "Mes de arribo",
+    labels = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+  ) +
+  scale_y_continuous(
+    name = "Rendimiento (Kg jaiba/Trampa)",
+    limits = c(0, NA),
+    breaks = seq(0, max(datos2$total_desembarque / datos2$total_trampas, na.rm = TRUE) + 1, by = 1),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  theme_minimal() +
+  theme(
+    axis.title.x = element_text(vjust = 0, margin = margin(t = 10)),
+    axis.title.y = element_text(size = 11, margin = margin(r = 10)),
+    axis.text.x  = element_text(angle = 0, hjust = 0.5, margin = margin(t = 6))
+  )
+
+
+## Trampas Dalcahue ----
+
+sum(TrampasDalcahue$DESEMBARQUE)
+sum(TrampasDalcahue$N)
+
+tabla5 <- TrampasDalcahue %>% group_by(MES_ARRIBO) %>% summarise(total_desembarque = sum(DESEMBARQUE, na.rm = TRUE))
+tabla7 <- TrampasDalcahue %>% group_by(MES_ARRIBO) %>% summarise(total_trampas = sum(N, na.rm = TRUE))
+
+
+round(tabla5$total_desembarque/1000,3)
+
+tabla7
+
+sum(tabla7$total_trampas)
+
+round((tabla5$total_desembarque/tabla7$total_trampas),2)
+
+sum(round((tabla5$total_desembarque/tabla7$total_trampas),2))
+
+sum(tabla5$total_desembarque)/sum(tabla7$total_trampas)
+
+RenTram(TrampasDalcahue)
+
+plot(TrampasDalcahue$N, TrampasDalcahue$DESEMBARQUE,
+     xlab = "Esfuerzo (trampas)",
+     ylab = "Desembarque (kg jaiba)",
+     pch = 19, col = "darkblue")
+abline(lm(DESEMBARQUE ~ N, data = TrampasDalcahue), col = "red", lwd = 2)
+
+RenReg(TrampasDalcahue)
+
+### Serie de Tiempo ----
+
+datos3 <- merge(tabla5, tabla7, by = "MES_ARRIBO")
+
+datos3$total_desembarque <- round(datos3$total_desembarque/1000,3)
+
+ggplot(datos3, aes(x = factor(MES_ARRIBO))) +
+  # Barras para Desembarque
+  geom_bar(aes(y = total_desembarque, fill = "Desembarque (t)"), 
+           stat = "identity", width = 0.7) +
+  # Línea para Esfuerzo (reescala correctamente)
+  geom_line(aes(y = total_trampas * max(total_desembarque) / max(total_trampas), 
+                color = "Esfuerzo de pesca"), 
+            linewidth = 1.2, group = 1) +
+  # Ejes y escalas
+  scale_y_continuous(
+    name = "Desembarque (t)",
+    breaks = seq(0, max(datos3$total_desembarque) + 1.5, by = 1.5),
+    expand = expansion(mult = c(0, 0.05)),
+    sec.axis = sec_axis(
+      trans = ~ . * max(datos3$total_trampas) / max(datos3$total_desembarque),
+      name = "Esfuerzo (Cantidad de trampas)",
+      breaks = seq(0, max(datos3$total_trampas) + 250, by = 250)
+    )
+  ) +
+  # Etiquetas del eje X
+  scale_x_discrete(
+    name = "Mes de arribo",
+    labels = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+  ) +
+  # Colores
+  scale_fill_manual(values = c("Desembarque (t)" = "steelblue")) +
+  scale_color_manual(values = c("Esfuerzo de pesca" = "brown")) +
+  # Tema y formato
+  theme_classic() +
+  theme(
+    axis.title.y.left = element_text(size = 11, margin = margin(r = 10)),
+    axis.title.y.right = element_text(size = 11, margin = margin(l = 10)),
+    axis.text.x = element_text(angle = 0, hjust = 0.5),
+    axis.title.x = element_text(vjust = -2.5), # ↓ Mueve el título del eje X hacia abajo
+    legend.title = element_blank(),
+    legend.position = "bottom",
+    legend.text = element_text(size = 10)
+  )
+
+ggplot(datos3, aes(x = factor(MES_ARRIBO), 
+                   y = total_desembarque / total_trampas, 
+                   group = 1)) +
+  geom_line(color = "limegreen", linewidth = 1.2) +
+  geom_point(color = "darkgreen", size = 3) +
+  scale_x_discrete(
+    name = "Mes de arribo",
+    labels = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+  ) +
+  scale_y_continuous(
+    name = "Rendimiento (Kg jaiba/Trampa)",
+    limits = c(0, NA),
+    breaks = seq(0, max(datos3$total_desembarque / datos3$total_trampas, na.rm = TRUE) + 1, by = 1),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  theme_minimal() +
+  theme(
+    axis.title.x = element_text(vjust = 0, margin = margin(t = 10)),
+    axis.title.y = element_text(size = 11, margin = margin(r = 10)),
+    axis.text.x  = element_text(angle = 0, hjust = 0.5, margin = margin(t = 6))
+  )
+
+
+## Trampas Curanue ----
+
+sum(TrampasCuranue$DESEMBARQUE)
+sum(TrampasCuranue$N)
+
+tabla6 <- TrampasCuranue %>% group_by(MES_ARRIBO) %>% summarise(total_desembarque = sum(DESEMBARQUE, na.rm = TRUE))
+tabla8 <- TrampasCuranue %>% group_by(MES_ARRIBO) %>% summarise(total_trampas = sum(N, na.rm = TRUE))
+
+round(tabla6$total_desembarque/1000,3)
+
+tabla8
+
+sum(tabla8$total_trampas)
+
+round((tabla6$total_desembarque/tabla8$total_trampas),2)
+
+sum(round((tabla6$total_desembarque/tabla8$total_trampas),2))
+
+sum(tabla6$total_desembarque)/sum(tabla8$total_trampas)
+
+datos3 <- merge(tabla5, tabla7, by = "MES_ARRIBO")
+
+datos3$total_desembarque <- round(datos3$total_desembarque/1000,3)
+
+plot(TrampasCuranue$N, TrampasCuranue$DESEMBARQUE,
+     xlab = "Esfuerzo (trampas)",
+     ylab = "Desembarque (kg jaiba)",
+     pch = 19, col = "darkblue")
+abline(lm(DESEMBARQUE ~ N, data = TrampasCuranue), col = "red", lwd = 2)
+
+RenTram(TrampasCuranue)
+
+RenReg(TrampasCuranue)
+
+### Serie de Tiempo ----
+
+datos4 <- merge(tabla6, tabla8, by = "MES_ARRIBO")
+
+datos4$total_desembarque <- round(datos4$total_desembarque/1000,3)
+
+ggplot(datos4, aes(x = factor(MES_ARRIBO))) +
+  # Barras para Desembarque
+  geom_bar(aes(y = total_desembarque, fill = "Desembarque (t)"), 
+           stat = "identity", width = 0.7) +
+  # Línea para Esfuerzo (reescala correctamente)
+  geom_line(aes(y = total_trampas * max(total_desembarque) / max(total_trampas), 
+                color = "Esfuerzo de pesca"), 
+            linewidth = 1.2, group = 1) +
+  # Ejes y escalas
+  scale_y_continuous(
+    name = "Desembarque (t)",
+    breaks = seq(0, max(datos4$total_desembarque) + 1.25, by = 1.25),
+    expand = expansion(mult = c(0, 0.05)),
+    sec.axis = sec_axis(
+      trans = ~ . * max(datos4$total_trampas) / max(datos4$total_desembarque),
+      name = "Esfuerzo (Cantidad de trampas)",
+      breaks = seq(0, max(datos4$total_trampas) + 100, by = 100)
+    )
+  ) +
+  # Etiquetas del eje X
+  scale_x_discrete(
+    name = "Mes de arribo",
+    labels = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+  ) +
+  # Colores
+  scale_fill_manual(values = c("Desembarque (t)" = "steelblue")) +
+  scale_color_manual(values = c("Esfuerzo de pesca" = "brown")) +
+  # Tema y formato
+  theme_classic() +
+  theme(
+    axis.title.y.left = element_text(size = 11, margin = margin(r = 10)),
+    axis.title.y.right = element_text(size = 11, margin = margin(l = 10)),
+    axis.text.x = element_text(angle = 0, hjust = 0.5),
+    axis.title.x = element_text(vjust = -2.5), # ↓ Mueve el título del eje X hacia abajo
+    legend.title = element_blank(),
+    legend.position = "bottom",
+    legend.text = element_text(size = 10)
+  )
+
+ggplot(datos4, aes(x = factor(MES_ARRIBO), 
+                   y = total_desembarque / total_trampas, 
+                   group = 1)) +
+  geom_line(color = "limegreen", linewidth = 1.2) +
+  geom_point(color = "darkgreen", size = 3) +
+  scale_x_discrete(
+    name = "Mes de arribo",
+    labels = c("Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic")
+  ) +
+  scale_y_continuous(
+    name = "Rendimiento (Kg jaiba/Trampa)",
+    limits = c(0, NA),
+    breaks = seq(0, max(datos4$total_desembarque / datos4$total_trampas, na.rm = TRUE) + 2, by = 2),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  theme_minimal() +
+  theme(
+    axis.title.x = element_text(vjust = 0, margin = margin(t = 10)),
+    axis.title.y = element_text(size = 11, margin = margin(r = 10)),
+    axis.text.x  = element_text(angle = 0, hjust = 0.5, margin = margin(t = 6))
+  )
+
+
+
+
+
+
+
+
+
+
+
+
+
+RenRegMulti <- function(data, xname = "N", covariates = NULL,
+                        alpha = 0.05, boot = FALSE, B = 1000, seed = 123) {
+  # data: data.frame con columnas DESEMBARQUE y xname y covariates si los hay
+  # xname: nombre (string) de la variable esfuerzo, p.ej. "N"
+  # covariates: vector de nombres (strings) de variables auxiliares, p.ej. c("MES")
+  #   las variables en 'covariates' se incluirán como factores automáticamente
+  # boot: si TRUE, calcula IC bootstrap (percentil) con B réplicas
+  # devuelve lista invisible con resultados y muestra un resumen tipo RenTram
+  
+  # chequeos
+  if (!("DESEMBARQUE" %in% names(data))) stop("data debe tener columna 'DESEMBARQUE'")
+  if (!(xname %in% names(data))) stop(paste0("data debe tener columna '", xname, "'"))
+  n <- nrow(data)
+  
+  # construir fórmula
+  formula_parts <- xname
+  if (!is.null(covariates)) {
+    # convertir covariates a factor en la fórmula
+    cov_terms <- sapply(covariates, function(v) paste0("factor(", v, ")"))
+    formula_parts <- c(formula_parts, cov_terms)
+  }
+  fmla <- as.formula(paste("DESEMBARQUE ~", paste(formula_parts, collapse = " + ")))
+  
+  # ajustar modelo
+  m <- lm(fmla, data = data)
+  coef_hat <- coef(m)
+  p <- length(coef_hat)
+  
+  # matriz de diseño y sumas de columnas (coincide con coef names)
+  MM <- model.matrix(m)       # n x p
+  sums_cols <- colSums(MM)    # vector longitud p, nombre coincide con coef names
+  sum_x <- sum(data[[xname]])
+  
+  # vector 'a' para delta method: a_j = sum(column_j) / sum_x
+  a_vec <- as.numeric(sums_cols / sum_x)
+  names(a_vec) <- names(coef_hat)
+  
+  # cov matrix of coef
+  Vcoef <- vcov(m)            # p x p
+  # estimated U and var(U)
+  U_hat <- sum(sums_cols * coef_hat) / sum_x     # = t(a_vec) %*% coef_hat
+  varU_hat <- as.numeric(t(a_vec) %*% Vcoef %*% a_vec)
+  seU_hat <- sqrt(varU_hat)
+  
+  # degrees freedom and t critical
+  df <- n - p
+  tcrit <- qt(1 - alpha/2, df = df)
+  CI_analitico <- U_hat + c(-1,1) * tcrit * seU_hat
+  
+  # bootstrap opcional: remuestrear filas, recalcular (coef, sums, U_boot)
+  CI_boot <- NULL
+  meanUboot <- sdUboot <- NA
+  if (boot) {
+    set.seed(seed)
+    Uboot <- numeric(B)
+    for (b in seq_len(B)) {
+      i <- sample.int(n, size = n, replace = TRUE)
+      dboot <- data[i, , drop = FALSE]
+      mboot <- lm(fmla, data = dboot)
+      # recomputar sums_cols_boot (usar model.matrix de la muestra bootstrap)
+      MMb <- model.matrix(mboot)
+      # Es importante alinear nombres: si alguna categoría no aparece en bootstrap,
+      # las columnas pueden cambiar. Para robustez, usaremos coefs y sums según mm colnames.
+      coefs_b <- coef(mboot)
+      sums_b <- colSums(MMb)
+      sum_x_b <- sum(dboot[[xname]])
+      Uboot[b] <- sum(sums_b * coefs_b) / sum_x_b
+    }
+    CI_boot <- quantile(Uboot, probs = c(alpha/2, 1 - alpha/2), na.rm = TRUE)
+    meanUboot <- mean(Uboot, na.rm = TRUE)
+    sdUboot <- sd(Uboot, na.rm = TRUE)
+  }
+  
+  # impresión tipo RenTram
+  cat("========================================\n")
+  cat("  ESTIMADOR DE REGRESIÓN MULTIPLE (Cochran extendido)\n")
+  cat("========================================\n\n")
+  cat("Fórmula ajustada:\n")
+  cat(deparse(fmla), "\n\n")
+  
+  cat("Coeficientes estimados (coef_hat):\n")
+  print(round(coef_hat, 6))
+  cat("\nMatriz de var-cov de coeficientes (vcov):\n")
+  print(round(Vcoef, 4))
+  cat("\nSumas de columnas de la matriz de diseño (s_j):\n")
+  print(round(sums_cols, 4))
+  cat("\nVector a (s_j / sum(x)):\n")
+  print(round(a_vec, 6))
+  cat("\nEstimación del rendimiento:\n")
+  cat(sprintf("  U estimado (kg jaiba/%s): %.6f\n", xname, U_hat))
+  cat(sprintf("  Var(U estimado): %.6f\n", varU_hat))
+  cat(sprintf("  se(U): %.6f\n\n", seU_hat))
+  cat(sprintf("  IC analítico %.1f%% = [%.6f, %.6f] (t, df=%d)\n",
+              100*(1-alpha), CI_analitico[1], CI_analitico[2], df))
+  if (boot) {
+    cat(sprintf("  IC bootstrap (percentil %.1f%%) = [%.6f, %.6f]\n",
+                100*(1-alpha), CI_boot[1], CI_boot[2]))
+    cat(sprintf("  mean(Uboot)=%.6f  sd(Uboot)=%.6f (B=%d)\n", meanUboot, sdUboot, B))
+  }
+  cat("\n========================================\n")
+  
+  # devolver resultados
+  invisible(list(
+    model = m,
+    coef = coef_hat,
+    vcov = Vcoef,
+    sums_cols = sums_cols,
+    a = a_vec,
+    U = U_hat,
+    varU = varU_hat,
+    seU = seU_hat,
+    CI_analitico = CI_analitico,
+    CI_boot = CI_boot,
+    Uboot_mean = meanUboot,
+    Uboot_sd = sdUboot,
+    df = df
+  ))
+}
+
+res <- RenRegMulti(TrampasAncud, xname = "N", covariates = c("MES_ARRIBO"),
+                   alpha = 0.05, boot = TRUE, B = 1000, seed = 2025)
+
+m2 <- lm(DESEMBARQUE ~ N + MES_ARRIBO, data = TrampasAncud)
+summary(m2)
+
+
+
+anova <- aov(DESEMBARQUE~MES_ZARPE,data = TrampasAncud)
+summary(anova)
+
+
+# Correlaciones -------------------------------------------------------------------------------
+
+cor(BuceoAncud$DESEMBARQUE,BuceoAncud$HORAS)
+cor(TrampasAncud$DESEMBARQUE,TrampasAncud$N)
+cor(TrampasDalcahue$DESEMBARQUE,TrampasDalcahue$N)
+cor(TrampasDalcahue$DESEMBARQUE,TrampasDalcahue$N)
+
+RenTram(TrampasAncud)
+RenReg(TrampasAncud)
+
+
+RenSchaefer(TrampasAncud, N_var = "N", Y_var = "DESEMBARQUE")
+RenTram(TrampasAncud)
+RenReg(TrampasAncud)
+
+RenSchaefer(TrampasDalcahue,N_var = "N",Y_var = "DESEMBARQUE")
+RenTram(TrampasDalcahue)
+RenReg(TrampasDalcahue)
+
+RenSchaefer(LagosT,N_var = "N",Y_var = "DESEMBARQUE")
+RenTram(LagosT)
+RenReg(LagosT)
+
+cor(TrampasAncud$N,TrampasAncud$DESEMBARQUE)
+cor(TrampasDalcahue$N,TrampasDalcahue$DESEMBARQUE)
+
+RenSchaefer(TrampasDalcahue,N_var = "N",Y_var = "DESEMBARQUE")
+
+set.seed(123)
+B <- 1000 # número de remuestreos
+R_boot <- numeric(B)
+
+E <- TrampasDalcahue$N
+Y <- TrampasDalcahue$DESEMBARQUE
+
+a <- 5.699564
+b <- 0.003647
+
+a_boot <- numeric(B)
+b_boot <- numeric(B)
+
+for (i in 1:B) {
+  idx <- sample(seq_along(E), replace = TRUE)
+  E_b <- E[idx]; Y_b <- Y[idx]
+  
+  try({
+    fit_b <- nls(Y_b ~ a * E_b - b * E_b^2, start = list(a = a, b = b))
+    coef_b <- coef(fit_b)
+    a_boot[i] <- coef_b["a"]
+    b_boot[i] <- coef_b["b"]
+    
+    Y_est_b <- coef_b["a"] * E_b - coef_b["b"] * E_b^2
+    R_total_b <- sum(Y_est_b) / sum(E_b)
+    R_boot[i] <- R_total_b
+  }, silent = TRUE)
+}
+
+R_mean <- mean(R_boot, na.rm = TRUE) ; R_mean
+R_sd <- sd(R_boot, na.rm = TRUE) ; R_sd^{2}
+IC_boot <- quantile(R_boot, probs = c(0.025, 0.975), na.rm = TRUE) ; IC_boot
+
+# Intervalos bootstrap de a y b:
+a_mean <- mean(a_boot) ; a_mean
+IC_a <- quantile(a_boot, probs = c(0.025, 0.975), na.rm = TRUE) ; IC_a
+b_mean <- mean(b_boot) ; b_mean
+IC_b <- quantile(b_boot, probs = c(0.025, 0.975), na.rm = TRUE) ; IC_b
+
+E_msy <- a_mean/(2*b_mean) ; E_msy
+U_msy <- (a_mean^{2})/(4*b_mean) ; U_msy
+
+
+
+
+plot_desembarque <- function(data, xvar = "N", yvar = "DESEMBARQUE") {
+  # Calcular correlación
+  r <- cor(data[[xvar]], data[[yvar]], use = "complete.obs", method = "pearson")
+  
+  # Crear texto de leyenda
+  corr_label <- paste0("r = ", round(r, 2))
+  
+  # Generar gráfico
+  ggplot(data, aes_string(x = xvar, y = yvar)) +
+    geom_point(color = "darkblue", size = 2) +
+    labs(x = "Esfuerzo (horas)",
+         y = "Desembarque (kg jaiba)") +
+    annotate("text",
+             x = Inf, y = Inf,
+             label = corr_label,
+             hjust = 1.1, vjust = 2,
+             color = "black", size = 7) +
+    theme_bw() +
+    theme(
+      legend.position = "none",
+      plot.title = element_blank(),
+      plot.subtitle = element_blank()
+    )
+}
+
+# Ejemplo de uso:
+
+plot_desembarque(BuceoAncud,xvar = "HORAS",yvar = "DESEMBARQUE")
+plot_desembarque(TrampasAncud,xvar = "N",yvar = "DESEMBARQUE")
+plot_desembarque(TrampasDalcahue,xvar = "N",yvar = "DESEMBARQUE")
+plot_desembarque(TrampasCuranue,xvar = "N",yvar = "DESEMBARQUE")
+
 
 </pre>
+
 
 
